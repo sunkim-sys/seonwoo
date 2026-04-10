@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Web Tools</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <aside class="sidebar">
+    <h1>Web Tools</h1>
+    <nav>
+      <a href="/" class="active">입과 템플릿 변환</a>
+      <a href="/pages/lecture-info.html">강의 정보 정리</a>
+      <a href="/pages/recommend.html">강의 추천</a>
+      <a href="/pages/catalog.html">과정 리스트</a>
+      <a href="/pages/report.html">콘텐츠 현황</a>
+    </nav>
+  </aside>
+
+  <main class="main" id="app">
+    <h2>입과 템플릿 변환</h2>
+    <p class="desc">엑셀 파일을 업로드하면, 각 시트별 파일을 개별 다운로드할 수 있습니다.</p>
+
+    <div class="upload-area" id="uploadArea">
+      <input type="file" id="fileInput" accept=".xlsx,.xls">
+      <div class="icon">&#128194;</div>
+      <p>클릭하거나 파일을 드래그하세요</p>
+      <p style="font-size:12px; color:#94a3b8; margin-top:4px;">.xlsx 파일만 지원</p>
+      <div class="filename" id="fileName"></div>
+    </div>
+
+    <div class="sample-download">
+      <a href="/sample.xlsx" download="입과_샘플.xlsx">샘플 파일 다운로드</a>
+    </div>
+
+    <div class="input-section">
+      <h3>추가 정보 입력</h3>
+      <div class="input-grid">
+        <div class="input-group">
+          <label for="productId">상품ID</label>
+          <input type="text" id="productId" placeholder="상품ID">
+        </div>
+        <div class="input-group">
+          <label for="courseId">코스ID</label>
+          <input type="text" id="courseId" placeholder="코스ID">
+        </div>
+        <div class="input-group">
+          <label for="startDate">수강 시작일</label>
+          <input type="date" id="startDate">
+        </div>
+        <div class="input-group">
+          <label for="endDate">수강 종료일</label>
+          <input type="date" id="endDate">
+        </div>
+        <div class="input-group full-width">
+          <label for="contactEmail">연락용이메일</label>
+          <input type="email" id="contactEmail" placeholder="연락용이메일">
+        </div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" id="uploadBtn" disabled>업로드 및 변환</button>
+
+    <div class="status" id="status"></div>
+
+    <div class="results" id="results">
+      <h3>변환 결과</h3>
+      <div class="sheet-list" id="sheetList"></div>
+    </div>
+  </main>
+
+  <script src="/js/app.js"></script>
+</body>
+</html>

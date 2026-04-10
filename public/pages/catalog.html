@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Web Tools - 과정 리스트</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/catalog.css">
+</head>
+<body>
+  <aside class="sidebar">
+    <h1>Web Tools</h1>
+    <nav>
+      <a href="/">입과 템플릿 변환</a>
+      <a href="/pages/lecture-info.html">강의 정보 정리</a>
+      <a href="/pages/recommend.html">강의 추천</a>
+      <a href="/pages/catalog.html" class="active">과정 리스트</a>
+      <a href="/pages/report.html">콘텐츠 현황</a>
+    </nav>
+  </aside>
+
+  <main class="main catalog-main">
+    <h2>과정 리스트</h2>
+
+    <!-- 필터 바 -->
+    <div class="filter-bar">
+      <div class="search-box">
+        <input type="text" id="searchInput" placeholder="강의명 또는 소개 검색...">
+      </div>
+      <div class="filter-selects">
+        <select id="filterCategory">
+          <option value="">전체 카테고리</option>
+        </select>
+        <select id="filterSub">
+          <option value="">전체 서브카테고리</option>
+        </select>
+        <select id="filterLevel">
+          <option value="">전체 난이도</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="result-count" id="resultCount"></div>
+
+    <!-- 로딩 -->
+    <div id="loading" class="loading">데이터를 불러오고 있습니다...</div>
+
+    <!-- 카드 리스트 -->
+    <div id="catalogList" class="catalog-list"></div>
+
+    <!-- 페이지네이션 -->
+    <div id="pagination" class="pagination"></div>
+
+    <!-- 상세 모달 -->
+    <div id="modal" class="modal" style="display:none;">
+      <div class="modal-content">
+        <button class="modal-close" id="modalClose">&times;</button>
+        <div id="modalBody"></div>
+      </div>
+    </div>
+  </main>
+
+  <script src="/js/catalog.js"></script>
+</body>
+</html>

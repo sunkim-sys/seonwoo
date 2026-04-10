@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Web Tools - 콘텐츠 현황 레포트</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/report.css">
+</head>
+<body>
+  <aside class="sidebar">
+    <h1>Web Tools</h1>
+    <nav>
+      <a href="/">입과 템플릿 변환</a>
+      <a href="/pages/lecture-info.html">강의 정보 정리</a>
+      <a href="/pages/recommend.html">강의 추천</a>
+      <a href="/pages/catalog.html">과정 리스트</a>
+      <a href="/pages/report.html" class="active">콘텐츠 현황</a>
+    </nav>
+  </aside>
+
+  <main class="main report-main">
+    <h2>콘텐츠 현황 레포트</h2>
+
+    <!-- 월 선택 -->
+    <div class="month-selector" id="monthSelector"></div>
+
+    <div id="loading" class="loading">데이터를 불러오고 있습니다...</div>
+
+    <div id="dashboard" style="display:none;">
+      <!-- 월별 추이 -->
+      <div class="section">
+        <h3>콘텐츠 월별 추이</h3>
+        <div class="chart-container" id="trendChart"></div>
+      </div>
+
+      <!-- TOP 10 -->
+      <div class="two-col">
+        <div class="section">
+          <h3>싱글플랜 TOP 10</h3>
+          <div id="singleTop"></div>
+        </div>
+        <div class="section">
+          <h3>올플랜 TOP 10</h3>
+          <div id="allplanTop"></div>
+        </div>
+      </div>
+
+      <!-- 카테고리별 TOP -->
+      <div class="section" id="categoryTopsSection" style="display:none;">
+        <div class="category-top-header">
+          <h3>카테고리별 TOP 강의</h3>
+          <select id="categorySelect"></select>
+        </div>
+        <div id="categoryTopList"></div>
+      </div>
+
+      <!-- 카테고리 순위 (Summary only) -->
+      <div class="section" id="categoryRankSection">
+        <h3>카테고리별 수강인원</h3>
+        <div class="two-col">
+          <div id="categoryChart"></div>
+          <div id="subCategoryChart"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="/js/report.js"></script>
+</body>
+</html>

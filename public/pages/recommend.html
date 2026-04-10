@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Web Tools - 강의 추천</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/recommend.css">
+</head>
+<body>
+  <aside class="sidebar">
+    <h1>Web Tools</h1>
+    <nav>
+      <a href="/">입과 템플릿 변환</a>
+      <a href="/pages/lecture-info.html">강의 정보 정리</a>
+      <a href="/pages/recommend.html" class="active">강의 추천</a>
+      <a href="/pages/catalog.html">과정 리스트</a>
+      <a href="/pages/report.html">콘텐츠 현황</a>
+    </nav>
+  </aside>
+
+  <main class="main">
+    <h2>강의 추천</h2>
+    <p class="desc">대상 강의명을 입력하면 B2C 판매 데이터 기반으로 추천 강의를 선정합니다.</p>
+
+    <div class="input-section">
+      <h3>B2C 판매 데이터</h3>
+      <p class="hint">판매 데이터 엑셀 파일(.xlsx)을 첨부하세요.</p>
+      <input type="file" id="salesFile" accept=".xlsx,.xls" class="file-input">
+      <div class="filename" id="salesFileName"></div>
+    </div>
+
+    <div class="input-section">
+      <h3>대상 강의명 입력</h3>
+      <p class="hint">추천 후보 강의명을 한 줄에 하나씩 입력하세요.</p>
+      <textarea id="lectureNames" rows="8" placeholder="강의명을 한 줄에 하나씩 입력하세요"></textarea>
+    </div>
+
+    <div class="input-section" style="margin-top:0;">
+      <div class="input-grid">
+        <div class="input-group">
+          <label for="topN">추천 강의 수</label>
+          <select id="topN">
+            <option value="3">3개</option>
+            <option value="5" selected>5개</option>
+            <option value="10">10개</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="action-bar">
+      <button class="btn btn-primary" id="analyzeBtn">추천 분석</button>
+    </div>
+
+    <div class="status" id="status"></div>
+
+    <div id="results" class="results" style="display:none;">
+      <h3>추천 결과 <span id="resultSummary" class="result-summary"></span></h3>
+      <div id="resultList" class="result-list"></div>
+    </div>
+  </main>
+
+  <script src="/js/recommend.js"></script>
+</body>
+</html>

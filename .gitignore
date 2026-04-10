@@ -1,0 +1,9 @@
+node_modules/
+.env
+*.log
+uploads/
+ngrok.exe
+ngrok-v3-stable-windows-amd64/
+start-server.vbs
+.DS_Store
+Thumbs.db

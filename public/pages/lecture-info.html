@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Web Tools - 강의 정보 정리</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/lecture-info.css">
+</head>
+<body>
+  <aside class="sidebar">
+    <h1>Web Tools</h1>
+    <nav>
+      <a href="/">입과 템플릿 변환</a>
+      <a href="/pages/lecture-info.html" class="active">강의 정보 정리</a>
+      <a href="/pages/recommend.html">강의 추천</a>
+      <a href="/pages/catalog.html">과정 리스트</a>
+      <a href="/pages/report.html">콘텐츠 현황</a>
+    </nav>
+  </aside>
+
+  <main class="main">
+    <h2>강의 정보 정리</h2>
+    <p class="desc">AI가 강의 정보를 요약하여 엑셀 파일로 다운로드할 수 있습니다.</p>
+
+    <div class="input-section">
+      <h3>강의명 입력</h3>
+      <p class="hint">강의명을 한 줄에 하나씩 입력하세요. 구글 스프레드시트에서 자동으로 정보를 가져옵니다.</p>
+      <textarea id="lectureNames" rows="8" placeholder="유니티 게임 포트폴리오 완성&#10;김민태의 프론트엔드 아카데미 : 제 1강 JavaScript & TypeScript Essential&#10;DT 세미나: Cloud(클라우드) - 지속 가능 경영을 위한 클라우드"></textarea>
+    </div>
+    <div class="action-bar">
+      <button class="btn btn-primary" id="searchBtn">AI 요약 및 엑셀 다운로드</button>
+    </div>
+
+    <div class="status" id="status"></div>
+  </main>
+
+  <script src="/js/lecture-info.js"></script>
+</body>
+</html>
