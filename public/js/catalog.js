@@ -287,26 +287,40 @@ document.getElementById('favBtn').addEventListener('click', () => {
   applyFilters();
 });
 
-document.getElementById('exportFavBtn').addEventListener('click', () => {
-  const favs = allLectures.filter(l => favorites.has(lectureId(l)));
-  if (!favs.length) {
+document.getElementById('exportFavBtn').addEventListener('click', async () => {
+  if (!favorites.size) {
     alert('즐겨찾기한 과정이 없습니다.');
     return;
   }
-  const headers = ['강의명', '카테고리', '서브카테고리', '난이도', 'URL', '소개'];
-  const rows = favs.map(l => [l.name || '', l.category || '', l.subCategory || '', l.level || '', l.url || '', l.intro || '']);
-  const esc = v => {
-    const s = String(v ?? '');
-    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-  };
-  const csv = '\uFEFF' + [headers, ...rows].map(r => r.map(esc).join(',')).join('\n');
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `과정_즐겨찾기_${new Date().toISOString().slice(0, 10)}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
+  const btn = document.getElementById('exportFavBtn');
+  btn.disabled = true;
+  const orig = btn.textContent;
+  btn.textContent = '생성 중...';
+  try {
+    const res = await fetch('/api/catalog/export-favorites', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids: [...favorites] }),
+    });
+    if (!res.ok) {
+      const raw = await res.text();
+      let msg = raw;
+      try { msg = JSON.parse(raw).error || raw; } catch {}
+      throw new Error(msg);
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `과정_즐겨찾기_${new Date().toISOString().slice(0, 10)}.xlsx`;
+    a.click();
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    alert('내보내기 실패: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = orig;
+  }
 });
 
 let searchTimer;

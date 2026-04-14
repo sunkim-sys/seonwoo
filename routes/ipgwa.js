@@ -1,4 +1,5 @@
 const { SHEET_CONFIGS, parseMainSheet, generateSheet, generatePreview, validateRows, applyCorrections, generateOriginalSheet } = require('../services/ipgwaService');
+const { buildStyledWorkbook } = require('../services/styledXlsx');
 
 async function handleIpgwaRoutes(req, res, { parseMultipart, sendJson }) {
   // POST /api/ipgwa/upload
@@ -40,6 +41,39 @@ async function handleIpgwaRoutes(req, res, { parseMultipart, sendJson }) {
       });
     } catch (err) {
       sendJson(res, 400, { error: err.message });
+    }
+    return;
+  }
+
+  // GET /api/ipgwa/sample
+  if (req.method === 'GET' && req.url === '/api/ipgwa/sample') {
+    try {
+      const headers = ['번호', '이름', '휴대폰 번호', '이메일', '직무', '직급', '소속/부서'];
+      const rows = [
+        [1, '홍길동', '010-1234-5678', 'hong@example.com', '기획', '대리', 'HR팀'],
+        [2, '김철수', '010-2345-6789', 'kim@example.com', '개발', '팀장', '개발팀'],
+        [3, '이영희', '010-3456-7890', 'lee@example.com', '디자인', '과장', '디자인팀'],
+      ];
+      const buffer = buildStyledWorkbook({
+        sheetName: 'Main',
+        title: '입과 템플릿 샘플',
+        subtitle: '컬럼 순서는 자유롭게 바꿔도 됩니다 (헤더 이름으로 매핑).',
+        headers,
+        rows,
+        widths: [
+          { wch: 6 }, { wch: 12 }, { wch: 16 }, { wch: 28 },
+          { wch: 14 }, { wch: 12 }, { wch: 18 },
+        ],
+      });
+      const filename = encodeURIComponent('입과_샘플.xlsx');
+      res.writeHead(200, {
+        'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'Content-Disposition': `attachment; filename*=UTF-8''${filename}`,
+        'Content-Length': buffer.length,
+      });
+      res.end(buffer);
+    } catch (err) {
+      sendJson(res, 500, { error: err.message });
     }
     return;
   }
