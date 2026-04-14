@@ -1,7 +1,11 @@
 const status = document.getElementById('status');
 
 function showStatus(msg, type) {
-  status.textContent = msg;
+  if (type === 'loading') {
+    status.innerHTML = `<span class="spinner"></span><span>${msg}</span>`;
+  } else {
+    status.textContent = msg;
+  }
   status.className = 'status ' + type;
 }
 
