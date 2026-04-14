@@ -3,7 +3,18 @@ let filtered = [];
 let currentPage = 1;
 const PAGE_SIZE = 20;
 
-// Load data
+const FAV_KEY = 'wt-catalog-favorites';
+let favorites = new Set(JSON.parse(localStorage.getItem(FAV_KEY) || '[]'));
+let showFavOnly = false;
+
+function saveFavorites() {
+  localStorage.setItem(FAV_KEY, JSON.stringify([...favorites]));
+}
+
+function lectureId(l) {
+  return (l.name || '') + '::' + (l.category || '');
+}
+
 async function loadCatalog() {
   try {
     const res = await fetch('/api/catalog');
@@ -12,12 +23,13 @@ async function loadCatalog() {
     allLectures = data.lectures;
     filtered = allLectures;
 
-    // Populate filters
     populateSelect('filterCategory', data.categories);
     populateSelect('filterSub', data.subCategories);
     populateSelect('filterLevel', data.levels);
 
     document.getElementById('loading').style.display = 'none';
+
+    restoreFromUrl();
     applyFilters();
   } catch (err) {
     document.getElementById('loading').textContent = '데이터를 불러오는 데 실패했습니다: ' + err.message;
@@ -34,17 +46,48 @@ function populateSelect(id, options) {
   });
 }
 
-// Filters
+function restoreFromUrl() {
+  const params = new URLSearchParams(location.search);
+  if (params.get('q')) document.getElementById('searchInput').value = params.get('q');
+  if (params.get('cat')) document.getElementById('filterCategory').value = params.get('cat');
+  if (params.get('sub')) document.getElementById('filterSub').value = params.get('sub');
+  if (params.get('level')) document.getElementById('filterLevel').value = params.get('level');
+  if (params.get('sort')) document.getElementById('sortBy').value = params.get('sort');
+  if (params.get('favOnly') === '1') { showFavOnly = true; }
+  if (params.get('page')) currentPage = parseInt(params.get('page')) || 1;
+  updateFavBtn();
+}
+
+function syncUrl() {
+  const params = new URLSearchParams();
+  const q = document.getElementById('searchInput').value;
+  const cat = document.getElementById('filterCategory').value;
+  const sub = document.getElementById('filterSub').value;
+  const level = document.getElementById('filterLevel').value;
+  const sort = document.getElementById('sortBy').value;
+  if (q) params.set('q', q);
+  if (cat) params.set('cat', cat);
+  if (sub) params.set('sub', sub);
+  if (level) params.set('level', level);
+  if (sort && sort !== 'default') params.set('sort', sort);
+  if (showFavOnly) params.set('favOnly', '1');
+  if (currentPage > 1) params.set('page', String(currentPage));
+  const qs = params.toString();
+  history.replaceState(null, '', qs ? '?' + qs : location.pathname);
+}
+
 function applyFilters() {
   const search = document.getElementById('searchInput').value.toLowerCase();
   const category = document.getElementById('filterCategory').value;
   const sub = document.getElementById('filterSub').value;
   const level = document.getElementById('filterLevel').value;
+  const sort = document.getElementById('sortBy').value;
 
   filtered = allLectures.filter(l => {
     if (category && l.category !== category) return false;
     if (sub && l.subCategory !== sub) return false;
     if (level && l.level !== level) return false;
+    if (showFavOnly && !favorites.has(lectureId(l))) return false;
     if (search) {
       const text = (l.name + ' ' + l.intro + ' ' + l.category + ' ' + l.subCategory).toLowerCase();
       if (!text.includes(search)) return false;
@@ -52,11 +95,36 @@ function applyFilters() {
     return true;
   });
 
-  currentPage = 1;
+  const levelOrder = { '초급': 1, '중급': 2, '고급': 3 };
+  if (sort === 'name-asc') filtered.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'ko'));
+  else if (sort === 'name-desc') filtered.sort((a, b) => (b.name || '').localeCompare(a.name || '', 'ko'));
+  else if (sort === 'level') filtered.sort((a, b) => (levelOrder[a.level] || 99) - (levelOrder[b.level] || 99));
+  else if (sort === 'category') filtered.sort((a, b) => (a.category || '').localeCompare(b.category || '', 'ko'));
+
+  if (currentPage > Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))) currentPage = 1;
   render();
+  syncUrl();
+}
+
+function highlight(text, keyword) {
+  if (!keyword) return escapeHtml(text);
+  const safe = escapeHtml(text);
+  const re = new RegExp(escapeRegex(keyword), 'gi');
+  return safe.replace(re, m => `<mark>${m}</mark>`);
+}
+
+function escapeHtml(v) {
+  return String(v ?? '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function escapeRegex(s) {
+  return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function render() {
+  const search = document.getElementById('searchInput').value;
   const start = (currentPage - 1) * PAGE_SIZE;
   const pageItems = filtered.slice(start, start + PAGE_SIZE);
 
@@ -66,20 +134,41 @@ function render() {
   const list = document.getElementById('catalogList');
   list.innerHTML = pageItems.map((l, i) => {
     const levelClass = getLevelClass(l.level);
+    const id = lectureId(l);
+    const isFav = favorites.has(id);
     return `
-      <div class="catalog-card" onclick="showDetail(${start + i})">
+      <div class="catalog-card" data-idx="${start + i}">
+        <button class="fav-btn ${isFav ? 'on' : ''}" data-id="${escapeHtml(id)}" title="즐겨찾기">${isFav ? '★' : '☆'}</button>
         <div class="catalog-card-top">
-          <div class="catalog-card-name">${l.name}</div>
+          <div class="catalog-card-name">${highlight(l.name, search)}</div>
           ${l.level ? `<span class="catalog-card-level ${levelClass}">${l.level}</span>` : ''}
         </div>
         <div class="catalog-card-tags">
-          ${l.category ? `<span class="tag">${l.category}</span>` : ''}
-          ${l.subCategory ? `<span class="tag">${l.subCategory}</span>` : ''}
+          ${l.category ? `<span class="tag">${highlight(l.category, search)}</span>` : ''}
+          ${l.subCategory ? `<span class="tag">${highlight(l.subCategory, search)}</span>` : ''}
         </div>
-        <div class="catalog-card-intro">${l.intro || ''}</div>
+        <div class="catalog-card-intro">${highlight(l.intro || '', search)}</div>
       </div>
     `;
   }).join('');
+
+  list.querySelectorAll('.fav-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const id = btn.dataset.id;
+      if (favorites.has(id)) favorites.delete(id);
+      else favorites.add(id);
+      saveFavorites();
+      applyFilters();
+    });
+  });
+
+  list.querySelectorAll('.catalog-card').forEach(card => {
+    card.addEventListener('click', (e) => {
+      if (e.target.closest('.fav-btn')) return;
+      showDetail(Number(card.dataset.idx));
+    });
+  });
 
   renderPagination();
 }
@@ -127,24 +216,24 @@ function renderPagination() {
 function goPage(p) {
   currentPage = p;
   render();
+  syncUrl();
   window.scrollTo({ top: 200, behavior: 'smooth' });
 }
 
-// Detail modal
 function showDetail(index) {
   const l = filtered[index];
   const modal = document.getElementById('modal');
   const body = document.getElementById('modalBody');
 
   body.innerHTML = `
-    <div class="modal-name">${l.name}</div>
+    <div class="modal-name">${escapeHtml(l.name)}</div>
     <div class="catalog-card-tags" style="margin-bottom:16px;">
-      ${l.category ? `<span class="tag">${l.category}</span>` : ''}
-      ${l.subCategory ? `<span class="tag">${l.subCategory}</span>` : ''}
-      ${l.level ? `<span class="tag">${l.level}</span>` : ''}
+      ${l.category ? `<span class="tag">${escapeHtml(l.category)}</span>` : ''}
+      ${l.subCategory ? `<span class="tag">${escapeHtml(l.subCategory)}</span>` : ''}
+      ${l.level ? `<span class="tag">${escapeHtml(l.level)}</span>` : ''}
     </div>
-    ${l.intro ? `<div class="modal-section"><h4>과정소개</h4><p>${l.intro}</p></div>` : ''}
-    ${l.url ? `<div class="modal-section modal-url"><h4>강의 링크</h4><a href="${l.url}" target="_blank">${l.url}</a></div>` : ''}
+    ${l.intro ? `<div class="modal-section"><h4>과정소개</h4><p>${escapeHtml(l.intro)}</p></div>` : ''}
+    ${l.url ? `<div class="modal-section modal-url"><h4>강의 링크</h4><a href="${l.url}" target="_blank">${escapeHtml(l.url)}</a></div>` : ''}
   `;
 
   modal.style.display = 'flex';
@@ -160,15 +249,51 @@ document.getElementById('modal').addEventListener('click', (e) => {
   }
 });
 
-// Event listeners
+function updateFavBtn() {
+  const btn = document.getElementById('favBtn');
+  btn.classList.toggle('active', showFavOnly);
+  btn.textContent = showFavOnly ? `★ 즐겨찾기만 (${favorites.size})` : `⭐ 즐겨찾기만 보기 (${favorites.size})`;
+}
+
+document.getElementById('favBtn').addEventListener('click', () => {
+  showFavOnly = !showFavOnly;
+  updateFavBtn();
+  applyFilters();
+});
+
+document.getElementById('exportFavBtn').addEventListener('click', () => {
+  const favs = allLectures.filter(l => favorites.has(lectureId(l)));
+  if (!favs.length) {
+    alert('즐겨찾기한 과정이 없습니다.');
+    return;
+  }
+  const headers = ['강의명', '카테고리', '서브카테고리', '난이도', 'URL', '소개'];
+  const rows = favs.map(l => [l.name || '', l.category || '', l.subCategory || '', l.level || '', l.url || '', l.intro || '']);
+  const esc = v => {
+    const s = String(v ?? '');
+    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  const csv = '\uFEFF' + [headers, ...rows].map(r => r.map(esc).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `과정_즐겨찾기_${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
 let searchTimer;
 document.getElementById('searchInput').addEventListener('input', () => {
   clearTimeout(searchTimer);
+  currentPage = 1;
   searchTimer = setTimeout(applyFilters, 300);
 });
-document.getElementById('filterCategory').addEventListener('change', applyFilters);
-document.getElementById('filterSub').addEventListener('change', applyFilters);
-document.getElementById('filterLevel').addEventListener('change', applyFilters);
+['filterCategory', 'filterSub', 'filterLevel', 'sortBy'].forEach(id => {
+  document.getElementById(id).addEventListener('change', () => {
+    currentPage = 1;
+    applyFilters();
+  });
+});
 
-// Init
 loadCatalog();

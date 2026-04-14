@@ -41,10 +41,23 @@
         <select id="filterLevel">
           <option value="">전체 난이도</option>
         </select>
+        <select id="sortBy">
+          <option value="default">기본순</option>
+          <option value="name-asc">이름 (가나다)</option>
+          <option value="name-desc">이름 (역순)</option>
+          <option value="level">난이도</option>
+          <option value="category">카테고리</option>
+        </select>
       </div>
     </div>
 
-    <div class="result-count" id="resultCount"></div>
+    <div class="result-row">
+      <div class="result-count" id="resultCount"></div>
+      <div class="result-actions">
+        <button id="favBtn" class="btn-toggle-fav">⭐ 즐겨찾기만 보기</button>
+        <button id="exportFavBtn" class="btn-export-fav">즐겨찾기 내보내기</button>
+      </div>
+    </div>
 
     <!-- 로딩 -->
     <div id="loading" class="loading">데이터를 불러오고 있습니다...</div>
