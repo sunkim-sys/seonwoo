@@ -95,13 +95,75 @@ function showStatus(msg, type) {
 
 function renderSheets(sheets) {
   sheetList.innerHTML = sheets.map(s => `
-    <div class="sheet-card">
-      <div>
-        <div class="sheet-name">${s.name}</div>
-        <div class="sheet-rows">${s.rowCount}건</div>
+    <div class="sheet-card" data-sheet-id="${s.id}">
+      <div class="sheet-card-head">
+        <div>
+          <div class="sheet-name">${s.name}</div>
+          <div class="sheet-rows">${s.rowCount}건</div>
+        </div>
+        <div class="sheet-actions">
+          <button class="btn-preview" data-id="${s.id}">미리보기</button>
+          <a href="/api/ipgwa/download/${s.id}" class="btn-download">다운로드</a>
+        </div>
       </div>
-      <a href="/api/ipgwa/download/${s.id}" class="btn-download">다운로드</a>
+      <div class="preview-body" id="preview-${s.id}"></div>
     </div>
   `).join('');
   results.classList.add('show');
+
+  sheetList.querySelectorAll('.btn-preview').forEach(btn => {
+    btn.addEventListener('click', () => togglePreview(btn.dataset.id, btn));
+  });
+}
+
+async function togglePreview(sheetId, btn) {
+  const body = document.getElementById('preview-' + sheetId);
+  if (body.classList.contains('open')) {
+    body.classList.remove('open');
+    body.innerHTML = '';
+    btn.textContent = '미리보기';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = '불러오는 중...';
+  try {
+    const res = await fetch('/api/ipgwa/preview/' + sheetId);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    body.innerHTML = renderPreviewTable(data.headers, data.rows);
+    body.classList.add('open');
+    btn.textContent = '접기';
+  } catch (err) {
+    body.innerHTML = `<div class="preview-error">${err.message}</div>`;
+    body.classList.add('open');
+    btn.textContent = '접기';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function escapeHtml(v) {
+  return String(v ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function renderPreviewTable(headers, rows) {
+  const MAX = 20;
+  const shown = rows.slice(0, MAX);
+  const more = rows.length - shown.length;
+
+  const thead = `<thead><tr>${headers.map(h => `<th>${escapeHtml(h)}</th>`).join('')}</tr></thead>`;
+  const tbody = `<tbody>${shown.map(r =>
+    `<tr>${headers.map((_, i) => `<td>${escapeHtml(r[i])}</td>`).join('')}</tr>`
+  ).join('')}</tbody>`;
+
+  const footer = more > 0
+    ? `<div class="preview-footer">+ ${more}건 더 있습니다. 전체 데이터는 다운로드로 확인하세요.</div>`
+    : (rows.length === 0 ? `<div class="preview-footer">데이터가 없습니다.</div>` : '');
+
+  return `<div class="preview-table-wrap"><table class="preview-table">${thead}${tbody}</table></div>${footer}`;
 }

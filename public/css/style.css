@@ -258,14 +258,129 @@ body {
 
 .sheet-card {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 18px 22px;
   transition: all 0.2s ease;
   box-shadow: var(--shadow-sm);
+}
+
+.sheet-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.sheet-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.btn-preview {
+  background: #eef2ff;
+  color: var(--primary-dark);
+  border: 1px solid #c7d2fe;
+  padding: 9px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-preview:hover:not(:disabled) {
+  background: #e0e7ff;
+  transform: translateY(-1px);
+}
+
+.btn-preview:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.preview-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease, margin-top 0.3s ease;
+}
+
+.preview-body.open {
+  max-height: 520px;
+  margin-top: 16px;
+  overflow: auto;
+}
+
+.preview-table-wrap {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: auto;
+  max-height: 400px;
+  background: #fafbff;
+}
+
+.preview-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+
+.preview-table th {
+  position: sticky;
+  top: 0;
+  background: var(--gradient-primary);
+  color: #fff;
+  padding: 10px 12px;
+  text-align: left;
+  font-weight: 600;
+  border-right: 1px solid rgba(255, 255, 255, 0.15);
+  letter-spacing: -0.01em;
+  z-index: 1;
+}
+
+.preview-table th:last-child {
+  border-right: none;
+}
+
+.preview-table td {
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--border);
+  border-right: 1px solid #eef2f7;
+  color: var(--text);
+}
+
+.preview-table td:last-child {
+  border-right: none;
+}
+
+.preview-table tbody tr:nth-child(even) td {
+  background: #f8fafc;
+}
+
+.preview-table tbody tr:hover td {
+  background: #eef2ff;
+}
+
+.preview-footer {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 6px;
+}
+
+.preview-error {
+  padding: 12px 14px;
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  font-size: 13px;
 }
 
 .sheet-card:hover {

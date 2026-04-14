@@ -98,6 +98,13 @@ function parseMainSheet(buffer) {
   return data.slice(1).filter(row => row.some(cell => cell !== ''));
 }
 
+function generatePreview(rows, config, extras = {}) {
+  return {
+    headers: config.headers,
+    rows: rows.map(row => config.mapRow(row, extras)),
+  };
+}
+
 function generateSheet(rows, config, extras = {}) {
   const wb = XLSX.utils.book_new();
   const sheetData = [config.headers, ...rows.map(row => config.mapRow(row, extras))];
@@ -110,4 +117,4 @@ function generateSheet(rows, config, extras = {}) {
   return XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
 }
 
-module.exports = { SHEET_CONFIGS, parseMainSheet, generateSheet };
+module.exports = { SHEET_CONFIGS, parseMainSheet, generateSheet, generatePreview };

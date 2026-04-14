@@ -1,4 +1,4 @@
-const { SHEET_CONFIGS, parseMainSheet, generateSheet } = require('../services/ipgwaService');
+const { SHEET_CONFIGS, parseMainSheet, generateSheet, generatePreview } = require('../services/ipgwaService');
 
 async function handleIpgwaRoutes(req, res, { parseMultipart, sendJson }) {
   // POST /api/ipgwa/upload
@@ -32,6 +32,31 @@ async function handleIpgwaRoutes(req, res, { parseMultipart, sendJson }) {
       sendJson(res, 200, { success: true, rowCount: rows.length, sheets });
     } catch (err) {
       sendJson(res, 400, { error: err.message });
+    }
+    return;
+  }
+
+  // GET /api/ipgwa/preview/:sheetId
+  const previewMatch = req.url.match(/^\/api\/ipgwa\/preview\/(.+)$/);
+  if (req.method === 'GET' && previewMatch) {
+    const sheetId = previewMatch[1];
+    const rows = global._ipgwaData;
+
+    if (!rows) {
+      return sendJson(res, 400, { error: '먼저 파일을 업로드해주세요.' });
+    }
+
+    const config = SHEET_CONFIGS.find(c => c.id === sheetId);
+    if (!config) {
+      return sendJson(res, 404, { error: '시트를 찾을 수 없습니다.' });
+    }
+
+    try {
+      const extras = global._ipgwaExtras || {};
+      const preview = generatePreview(rows, config, extras);
+      sendJson(res, 200, { name: config.name, ...preview });
+    } catch (err) {
+      sendJson(res, 500, { error: err.message });
     }
     return;
   }
