@@ -204,7 +204,17 @@ document.getElementById('exportReportBtn').addEventListener('click', async () =>
   try {
     const theme = document.documentElement.getAttribute('data-theme');
     const bg = theme === 'dark' ? '#0b1220' : '#ffffff';
-    const canvas = await html2canvas(target, { backgroundColor: bg, scale: 2, useCORS: true });
+    const fullWidth = Math.max(target.scrollWidth, target.offsetWidth, 1100);
+    const fullHeight = Math.max(target.scrollHeight, target.offsetHeight);
+    const canvas = await html2canvas(target, {
+      backgroundColor: bg,
+      scale: 2,
+      useCORS: true,
+      width: fullWidth,
+      height: fullHeight,
+      windowWidth: fullWidth,
+      windowHeight: fullHeight,
+    });
     const link = document.createElement('a');
     link.download = `콘텐츠현황_${currentMonth === 'summary' ? '전체' : currentMonth}_${new Date().toISOString().slice(0, 10)}.png`;
     link.href = canvas.toDataURL('image/png');
