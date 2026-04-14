@@ -98,12 +98,18 @@ document.getElementById('analyzeBtn').addEventListener('click', async () => {
       body: formData,
     });
 
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.error);
+    const raw = await res.text();
+    let data = null;
+    try {
+      data = raw ? JSON.parse(raw) : null;
+    } catch (e) {
+      const preview = raw ? raw.slice(0, 200) : '(빈 응답)';
+      throw new Error(`서버 응답이 JSON이 아닙니다 (HTTP ${res.status}). 본문 일부: ${preview}`);
     }
 
-    const data = await res.json();
+    if (!res.ok) throw new Error((data && data.error) || `서버 오류 (HTTP ${res.status})`);
+    if (!data) throw new Error('서버가 빈 응답을 반환했습니다.');
+
     lastResults = data.results || [];
     renderSalesSummary(data.salesSummary);
     renderResults(data);
