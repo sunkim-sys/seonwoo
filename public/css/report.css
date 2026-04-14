@@ -386,3 +386,32 @@
 }
 
 :root[data-theme="dark"] .h-bar-track { background: rgba(99, 102, 241, 0.1); }
+
+:root[data-theme="dark"] .section h3,
+:root[data-theme="dark"] .category-top-header h3,
+:root[data-theme="dark"] .top-name,
+:root[data-theme="dark"] .h-bar-label,
+:root[data-theme="dark"] .h-bar-value {
+  color: var(--text);
+}
+
+:root[data-theme="dark"] .top-category,
+:root[data-theme="dark"] .top-count,
+:root[data-theme="dark"] .bar-value,
+:root[data-theme="dark"] .bar-label {
+  color: var(--text-muted);
+}
+
+:root[data-theme="dark"] .month-btn {
+  color: var(--text);
+}
+
+:root[data-theme="dark"] .month-btn.active {
+  background: var(--gradient-primary);
+  color: #fff;
+  border-color: transparent;
+}
+
+:root[data-theme="dark"] #categorySelect {
+  color: var(--text);
+}
