@@ -105,26 +105,87 @@ function renderValidation(issues) {
       </div>`;
     return;
   }
-  const rows = issues.map(i => `
-    <tr>
+  const rows = issues.map((i, idx) => `
+    <tr data-issue-idx="${idx}">
       <td class="v-row">${i.rowNumber}행</td>
       <td class="v-name">${escapeHtml(i.name)}</td>
       <td class="v-field">${i.field}</td>
-      <td class="v-value">${escapeHtml(i.value) || '<em>(비어있음)</em>'}</td>
+      <td class="v-value">
+        <input type="text"
+          class="v-input"
+          data-row-number="${i.rowNumber}"
+          data-field="${i.field}"
+          data-original="${escapeHtml(i.value)}"
+          value="${escapeHtml(i.value)}"
+          placeholder="${i.field === '이메일' ? 'name@example.com' : '010-1234-5678'}">
+      </td>
       <td class="v-reason">${escapeHtml(i.reason)}</td>
     </tr>
   `).join('');
   validation.innerHTML = `
     <div class="validation-box warn">
       <div class="validation-title">⚠ 확인이 필요한 항목 ${issues.length}건</div>
-      <div class="validation-hint">아래 행들은 다운로드 전에 원본 파일을 수정해 주세요.</div>
+      <div class="validation-hint">값을 직접 고친 뒤 <b>수정 적용</b>을 누르면 결과 파일과 원본(수정본) 모두 반영됩니다.</div>
       <div class="validation-table-wrap">
         <table class="validation-table">
-          <thead><tr><th>행</th><th>이름</th><th>항목</th><th>입력값</th><th>문제</th></tr></thead>
+          <thead><tr><th>행</th><th>이름</th><th>항목</th><th>수정할 값</th><th>문제</th></tr></thead>
           <tbody>${rows}</tbody>
         </table>
       </div>
+      <div class="validation-actions">
+        <button id="applyFixBtn" class="btn btn-primary">수정 적용</button>
+      </div>
     </div>`;
+
+  document.getElementById('applyFixBtn').addEventListener('click', applyFixes);
+}
+
+async function applyFixes() {
+  const inputs = [...document.querySelectorAll('.v-input')];
+  const corrections = inputs
+    .filter(inp => inp.value !== inp.dataset.original)
+    .map(inp => ({
+      rowNumber: Number(inp.dataset.rowNumber),
+      field: inp.dataset.field,
+      value: inp.value.trim(),
+    }));
+
+  if (!corrections.length) {
+    showStatus('변경된 값이 없습니다.', 'error');
+    return;
+  }
+
+  const btn = document.getElementById('applyFixBtn');
+  btn.disabled = true;
+  btn.textContent = '적용 중...';
+  try {
+    const res = await fetch('/api/ipgwa/fix', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ corrections }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+
+    showStatus(`${data.applied}건을 수정했습니다. 원본과 변환 결과 모두 반영되었습니다.`, 'success');
+    renderValidation(data.issues || []);
+
+    // Refresh any open previews
+    document.querySelectorAll('.preview-body.open').forEach(body => {
+      const card = body.closest('.sheet-card');
+      const sheetId = card.dataset.sheetId;
+      body.classList.remove('open');
+      body.innerHTML = '';
+      const pbtn = card.querySelector('.btn-preview');
+      pbtn.textContent = '미리보기';
+      togglePreview(sheetId, pbtn);
+    });
+  } catch (err) {
+    showStatus(err.message || '수정 적용에 실패했습니다.', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '수정 적용';
+  }
 }
 
 function showStatus(msg, type) {

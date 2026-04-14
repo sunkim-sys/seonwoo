@@ -1,4 +1,4 @@
-const { SHEET_CONFIGS, parseMainSheet, generateSheet, generatePreview, validateRows } = require('../services/ipgwaService');
+const { SHEET_CONFIGS, parseMainSheet, generateSheet, generatePreview, validateRows, applyCorrections, generateOriginalSheet } = require('../services/ipgwaService');
 
 async function handleIpgwaRoutes(req, res, { parseMultipart, sendJson }) {
   // POST /api/ipgwa/upload
@@ -40,6 +40,51 @@ async function handleIpgwaRoutes(req, res, { parseMultipart, sendJson }) {
       });
     } catch (err) {
       sendJson(res, 400, { error: err.message });
+    }
+    return;
+  }
+
+  // POST /api/ipgwa/fix
+  if (req.method === 'POST' && req.url === '/api/ipgwa/fix') {
+    const parsed = global._ipgwaData;
+    if (!parsed) {
+      return sendJson(res, 400, { error: '먼저 파일을 업로드해주세요.' });
+    }
+    let body = '';
+    req.on('data', chunk => { body += chunk.toString('utf-8'); });
+    req.on('end', () => {
+      try {
+        const { corrections } = JSON.parse(body || '{}');
+        if (!Array.isArray(corrections)) {
+          return sendJson(res, 400, { error: 'corrections가 배열이어야 합니다.' });
+        }
+        const applied = applyCorrections(parsed, corrections);
+        const issues = validateRows(parsed);
+        sendJson(res, 200, { success: true, applied, issues });
+      } catch (err) {
+        sendJson(res, 400, { error: err.message });
+      }
+    });
+    return;
+  }
+
+  // GET /api/ipgwa/download-original
+  if (req.method === 'GET' && req.url === '/api/ipgwa/download-original') {
+    const parsed = global._ipgwaData;
+    if (!parsed) {
+      return sendJson(res, 400, { error: '먼저 파일을 업로드해주세요.' });
+    }
+    try {
+      const buffer = generateOriginalSheet(parsed);
+      const filename = encodeURIComponent('입과_원본_수정본.xlsx');
+      res.writeHead(200, {
+        'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'Content-Disposition': `attachment; filename*=UTF-8''${filename}`,
+        'Content-Length': buffer.length,
+      });
+      res.end(buffer);
+    } catch (err) {
+      sendJson(res, 500, { error: err.message });
     }
     return;
   }

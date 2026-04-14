@@ -197,6 +197,32 @@ function parseMainSheet(buffer) {
   return { rows, headerIndex, rawHeaders: headerRow };
 }
 
+function applyCorrections(parsed, corrections) {
+  const { rows, headerIndex } = parsed;
+  const fieldMap = { 이메일: 'email', 휴대폰: 'phone' };
+  let applied = 0;
+  for (const c of corrections) {
+    const rowIdx = c.rowNumber - 2; // rowNumber is 1-based with header row = 1
+    if (rowIdx < 0 || rowIdx >= rows.length) continue;
+    const field = fieldMap[c.field] || c.field;
+    const colIdx = headerIndex[field];
+    if (colIdx === undefined) continue;
+    rows[rowIdx][colIdx] = c.value;
+    applied++;
+  }
+  return applied;
+}
+
+function generateOriginalSheet(parsed) {
+  const { rows, rawHeaders } = parsed;
+  const wb = XLSX.utils.book_new();
+  const sheetData = [rawHeaders, ...rows];
+  const ws = XLSX.utils.aoa_to_sheet(sheetData);
+  ws['!cols'] = rawHeaders.map(h => ({ wch: Math.max(String(h).length * 2, 12) }));
+  XLSX.utils.book_append_sheet(wb, ws, 'Main');
+  return XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+}
+
 function generatePreview(parsed, config, extras = {}) {
   const { rows, headerIndex } = parsed;
   return {
@@ -217,4 +243,4 @@ function generateSheet(parsed, config, extras = {}) {
   return XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
 }
 
-module.exports = { SHEET_CONFIGS, parseMainSheet, generateSheet, generatePreview, validateRows };
+module.exports = { SHEET_CONFIGS, parseMainSheet, generateSheet, generatePreview, validateRows, applyCorrections, generateOriginalSheet };
