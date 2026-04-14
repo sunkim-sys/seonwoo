@@ -15,10 +15,32 @@ function lectureId(l) {
   return (l.name || '') + '::' + (l.category || '');
 }
 
+async function fetchCatalog(attempt = 1, maxAttempts = 3) {
+  const loadingEl = document.getElementById('loading');
+  const hint = attempt > 1 ? ` (재시도 ${attempt}/${maxAttempts})` : '';
+  loadingEl.textContent = `데이터를 불러오고 있습니다...${hint}`;
+
+  const res = await fetch('/api/catalog');
+  const raw = await res.text();
+  try {
+    const data = JSON.parse(raw);
+    if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+    return data;
+  } catch (e) {
+    if (e instanceof SyntaxError) {
+      if (attempt < maxAttempts) {
+        await new Promise(r => setTimeout(r, 2000 * attempt));
+        return fetchCatalog(attempt + 1, maxAttempts);
+      }
+      throw new Error(`서버가 JSON을 반환하지 않았습니다 (HTTP ${res.status}). Render 서버가 시작 중이거나 장애 상태일 수 있어요. 잠시 후 새로고침해주세요.`);
+    }
+    throw e;
+  }
+}
+
 async function loadCatalog() {
   try {
-    const res = await fetch('/api/catalog');
-    const data = await res.json();
+    const data = await fetchCatalog();
 
     allLectures = data.lectures;
     filtered = allLectures;
@@ -32,7 +54,10 @@ async function loadCatalog() {
     restoreFromUrl();
     applyFilters();
   } catch (err) {
-    document.getElementById('loading').textContent = '데이터를 불러오는 데 실패했습니다: ' + err.message;
+    document.getElementById('loading').innerHTML = `
+      데이터를 불러오는 데 실패했습니다.<br>
+      <span style="font-size:12px;color:var(--text-muted);">${err.message}</span><br>
+      <button onclick="location.reload()" style="margin-top:12px;padding:8px 16px;border-radius:8px;border:1px solid var(--border);background:var(--surface);cursor:pointer;font-family:inherit;">다시 시도</button>`;
   }
 }
 
