@@ -45,7 +45,7 @@ const SHEET_CONFIGS = [
       '',                          // ID
       get(row, h, 'email'),        // 이메일
       get(row, h, 'name'),         // 이름
-      extras.contactEmail || '',   // 연락용이메일
+      '',                          // 연락용이메일
       get(row, h, 'phone'),        // 휴대폰번호
       '',                          // 소속회사
       get(row, h, 'dept'),         // 부서

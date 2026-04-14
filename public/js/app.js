@@ -62,7 +62,6 @@ uploadBtn.addEventListener('click', async () => {
   formData.append('file', selectedFile);
   formData.append('productId', document.getElementById('productId').value);
   formData.append('courseId', document.getElementById('courseId').value);
-  formData.append('contactEmail', document.getElementById('contactEmail').value);
   formData.append('startDate', document.getElementById('startDate').value);
   formData.append('endDate', document.getElementById('endDate').value);
 
