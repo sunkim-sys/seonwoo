@@ -525,6 +525,104 @@ body {
   border: 1px solid #fecaca;
 }
 
+/* Validation */
+.validation:empty {
+  display: none;
+}
+
+.validation-box {
+  padding: 16px 20px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  animation: fadeInUp 0.3s ease;
+}
+
+.validation-box.ok {
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #065f46;
+}
+
+.validation-box.warn {
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  color: #78350f;
+}
+
+.validation-title {
+  font-weight: 700;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.validation-hint {
+  font-size: 12.5px;
+  color: #92400e;
+  margin-bottom: 12px;
+}
+
+.validation-table-wrap {
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid #fde68a;
+  max-height: 320px;
+  overflow: auto;
+}
+
+.validation-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+
+.validation-table th {
+  position: sticky;
+  top: 0;
+  background: #fef3c7;
+  color: #78350f;
+  padding: 9px 12px;
+  text-align: left;
+  font-weight: 700;
+  border-bottom: 1px solid #fcd34d;
+}
+
+.validation-table td {
+  padding: 9px 12px;
+  border-bottom: 1px solid #fef3c7;
+  color: #1f2937;
+  vertical-align: top;
+}
+
+.validation-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.validation-table .v-row {
+  font-weight: 600;
+  color: #78350f;
+  white-space: nowrap;
+}
+
+.validation-table .v-name {
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+.validation-table .v-field {
+  white-space: nowrap;
+  color: #6b7280;
+}
+
+.validation-table .v-value {
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  color: #b91c1c;
+  word-break: break-all;
+}
+
+.validation-table .v-reason {
+  color: #78350f;
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar {
   width: 10px;

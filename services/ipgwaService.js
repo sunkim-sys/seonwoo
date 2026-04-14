@@ -119,6 +119,62 @@ const SHEET_CONFIGS = [
   },
 ];
 
+function validateEmail(value) {
+  const v = String(value).trim();
+  if (!v) return null;
+  if (/\s/.test(v)) return '공백이 포함돼 있음';
+  if ((v.match(/@/g) || []).length !== 1) return '@ 기호가 없거나 여러 개임';
+  const [local, domain] = v.split('@');
+  if (!local) return '@ 앞부분이 비어있음';
+  if (!domain) return '@ 뒷부분이 비어있음';
+  if (v.includes('..')) return '점(.)이 연속으로 있음';
+  if (v.startsWith('.') || v.endsWith('.')) return '점(.)으로 시작하거나 끝남';
+  if (!domain.includes('.')) return '도메인에 점(.)이 없음 (예: .com)';
+  if (domain.startsWith('.') || domain.endsWith('.')) return '도메인이 점(.)으로 시작/끝남';
+  if (!/^[A-Za-z0-9._%+\-]+$/.test(local)) return '사용할 수 없는 문자가 포함됨';
+  if (!/^[A-Za-z0-9.\-]+$/.test(domain)) return '도메인에 사용할 수 없는 문자가 포함됨';
+  return null;
+}
+
+function validatePhone(value) {
+  const raw = String(value).trim();
+  if (!raw) return null;
+  const digits = raw.replace(/[\s-]/g, '');
+  if (!/^\d+$/.test(digits)) return '숫자/하이픈/공백 외 문자가 포함됨';
+  if (!digits.startsWith('010')) return '010으로 시작하지 않음';
+  if (digits.length !== 11) return `자릿수가 ${digits.length}자리 (11자리여야 함)`;
+  // Allowed formats: 01012345678 or 010-1234-5678
+  if (!/^010\d{8}$/.test(digits)) return '형식 오류';
+  if (raw.includes('-') && !/^010-\d{4}-\d{4}$/.test(raw)) return '하이픈 위치가 010-XXXX-XXXX 형식과 다름';
+  return null;
+}
+
+function validateRows(parsed) {
+  const { rows, headerIndex } = parsed;
+  const issues = [];
+  rows.forEach((row, i) => {
+    const rowNumber = i + 2; // +1 for header, +1 for 1-based
+    const name = get(row, headerIndex, 'name');
+
+    if (headerIndex.email !== undefined) {
+      const email = get(row, headerIndex, 'email');
+      const err = validateEmail(email);
+      if (err) {
+        issues.push({ rowNumber, field: '이메일', name, value: email, reason: err });
+      }
+    }
+
+    if (headerIndex.phone !== undefined) {
+      const phone = get(row, headerIndex, 'phone');
+      const err = validatePhone(phone);
+      if (err) {
+        issues.push({ rowNumber, field: '휴대폰', name, value: phone, reason: err });
+      }
+    }
+  });
+  return issues;
+}
+
 function parseMainSheet(buffer) {
   const wb = XLSX.read(buffer, { type: 'buffer' });
   const ws = wb.Sheets['Main'] || wb.Sheets[wb.SheetNames[0]];
@@ -161,4 +217,4 @@ function generateSheet(parsed, config, extras = {}) {
   return XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
 }
 
-module.exports = { SHEET_CONFIGS, parseMainSheet, generateSheet, generatePreview };
+module.exports = { SHEET_CONFIGS, parseMainSheet, generateSheet, generatePreview, validateRows };

@@ -5,6 +5,7 @@ const fileName = document.getElementById('fileName');
 const status = document.getElementById('status');
 const results = document.getElementById('results');
 const sheetList = document.getElementById('sheetList');
+const validation = document.getElementById('validation');
 
 let selectedFile = null;
 
@@ -46,6 +47,7 @@ function selectFile(file) {
   uploadBtn.disabled = false;
   status.style.display = 'none';
   results.classList.remove('show');
+  validation.innerHTML = '';
 }
 
 // Upload
@@ -84,6 +86,7 @@ uploadBtn.addEventListener('click', async () => {
     const mapped = (data.mappedFields || []).map(f => fieldLabels[f] || f).join(', ');
     const extraMsg = mapped ? ` (인식된 컬럼: ${mapped})` : '';
     showStatus(`${data.rowCount}건의 데이터를 변환했습니다.${extraMsg}`, 'success');
+    renderValidation(data.issues || []);
     renderSheets(data.sheets);
   } catch (err) {
     console.error('Upload error:', err);
@@ -93,6 +96,36 @@ uploadBtn.addEventListener('click', async () => {
     uploadBtn.textContent = '업로드 및 변환';
   }
 });
+
+function renderValidation(issues) {
+  if (!issues.length) {
+    validation.innerHTML = `
+      <div class="validation-box ok">
+        <div class="validation-title">✓ 이메일·휴대폰 형식 이상 없음</div>
+      </div>`;
+    return;
+  }
+  const rows = issues.map(i => `
+    <tr>
+      <td class="v-row">${i.rowNumber}행</td>
+      <td class="v-name">${escapeHtml(i.name)}</td>
+      <td class="v-field">${i.field}</td>
+      <td class="v-value">${escapeHtml(i.value) || '<em>(비어있음)</em>'}</td>
+      <td class="v-reason">${escapeHtml(i.reason)}</td>
+    </tr>
+  `).join('');
+  validation.innerHTML = `
+    <div class="validation-box warn">
+      <div class="validation-title">⚠ 확인이 필요한 항목 ${issues.length}건</div>
+      <div class="validation-hint">아래 행들은 다운로드 전에 원본 파일을 수정해 주세요.</div>
+      <div class="validation-table-wrap">
+        <table class="validation-table">
+          <thead><tr><th>행</th><th>이름</th><th>항목</th><th>입력값</th><th>문제</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </div>`;
+}
 
 function showStatus(msg, type) {
   status.textContent = msg;

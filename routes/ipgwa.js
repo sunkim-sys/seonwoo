@@ -1,4 +1,4 @@
-const { SHEET_CONFIGS, parseMainSheet, generateSheet, generatePreview } = require('../services/ipgwaService');
+const { SHEET_CONFIGS, parseMainSheet, generateSheet, generatePreview, validateRows } = require('../services/ipgwaService');
 
 async function handleIpgwaRoutes(req, res, { parseMultipart, sendJson }) {
   // POST /api/ipgwa/upload
@@ -28,11 +28,14 @@ async function handleIpgwaRoutes(req, res, { parseMultipart, sendJson }) {
         rowCount: parsed.rows.length,
       }));
 
+      const issues = validateRows(parsed);
+
       sendJson(res, 200, {
         success: true,
         rowCount: parsed.rows.length,
         detectedHeaders: parsed.rawHeaders,
         mappedFields: Object.keys(parsed.headerIndex),
+        issues,
         sheets,
       });
     } catch (err) {
