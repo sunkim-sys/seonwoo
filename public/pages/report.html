@@ -27,7 +27,18 @@
     <h2>콘텐츠 현황 레포트</h2>
 
     <!-- 월 선택 -->
-    <div class="month-selector" id="monthSelector"></div>
+    <div class="report-actions-bar">
+      <div class="month-selector" id="monthSelector"></div>
+      <button id="exportReportBtn" class="btn-export-report">현재 뷰 PNG 저장</button>
+    </div>
+
+    <!-- 상세 모달 -->
+    <div id="reportModal" class="report-modal" style="display:none;">
+      <div class="report-modal-content">
+        <button class="report-modal-close" id="reportModalClose">&times;</button>
+        <div id="reportModalBody"></div>
+      </div>
+    </div>
 
     <div id="loading" class="loading">데이터를 불러오고 있습니다...</div>
 
@@ -70,6 +81,7 @@
     </div>
   </main>
 
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script src="/js/layout.js"></script>
   <script src="/js/report.js"></script>
 </body>

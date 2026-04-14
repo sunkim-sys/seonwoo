@@ -111,10 +111,20 @@ function renderTrendChart(trend) {
   const container = document.getElementById('trendChart');
   const maxVal = Math.max(...trend.map(t => t.total), 1);
 
-  const barsHtml = trend.map(t => {
+  const barsHtml = trend.map((t, i) => {
     const h = Math.max((t.total / maxVal) * 180, 4);
+    const prev = i > 0 ? trend[i - 1].total : null;
+    let mom = '';
+    if (prev !== null && prev > 0) {
+      const pct = ((t.total - prev) / prev) * 100;
+      const sign = pct > 0 ? '+' : '';
+      const cls = pct > 0 ? 'mom-up' : (pct < 0 ? 'mom-down' : 'mom-flat');
+      const arrow = pct > 0 ? '↑' : (pct < 0 ? '↓' : '·');
+      mom = `<div class="mom-badge ${cls}">${arrow} ${sign}${pct.toFixed(1)}%</div>`;
+    }
     return `
       <div class="bar-group">
+        ${mom}
         <div class="bar-value">${t.total.toLocaleString()}</div>
         <div class="bar bar-total" style="height:${h}px;"></div>
         <div class="bar-label">${t.month}</div>
@@ -142,15 +152,70 @@ function renderTopList(containerId, items) {
     container.innerHTML = '<p style="color:#94a3b8;font-size:13px;">데이터 없음</p>';
     return;
   }
-  container.innerHTML = `<div class="top-list">` + items.map(item => `
-    <div class="top-item">
+  container.innerHTML = `<div class="top-list">` + items.map((item, i) => `
+    <div class="top-item" data-list="${containerId}" data-idx="${i}">
       <div class="top-rank">${item.rank}</div>
       <div class="top-name" title="${item.name}">${item.name}</div>
       <div class="top-category">${item.category}</div>
       <div class="top-count">${item.count.toLocaleString()}명</div>
     </div>
   `).join('') + `</div>`;
+
+  container.querySelectorAll('.top-item').forEach(el => {
+    el.addEventListener('click', () => showTopDetail(items[Number(el.dataset.idx)]));
+  });
 }
+
+function showTopDetail(item) {
+  const modal = document.getElementById('reportModal');
+  const body = document.getElementById('reportModalBody');
+  body.innerHTML = `
+    <h3 class="rm-name">${escapeHtml(item.name)}</h3>
+    <div class="rm-grid">
+      <div><div class="rm-k">순위</div><div class="rm-v">#${item.rank}</div></div>
+      <div><div class="rm-k">카테고리</div><div class="rm-v">${escapeHtml(item.category || '-')}</div></div>
+      ${item.subCategory ? `<div><div class="rm-k">서브카테고리</div><div class="rm-v">${escapeHtml(item.subCategory)}</div></div>` : ''}
+      <div><div class="rm-k">수강인원</div><div class="rm-v">${item.count.toLocaleString()}명</div></div>
+    </div>`;
+  modal.style.display = 'flex';
+}
+
+function escapeHtml(v) {
+  return String(v ?? '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+document.getElementById('reportModalClose').addEventListener('click', () => {
+  document.getElementById('reportModal').style.display = 'none';
+});
+document.getElementById('reportModal').addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) e.currentTarget.style.display = 'none';
+});
+
+document.getElementById('exportReportBtn').addEventListener('click', async () => {
+  if (typeof html2canvas === 'undefined') {
+    alert('내보내기 라이브러리 로드에 실패했습니다.');
+    return;
+  }
+  const target = document.getElementById('dashboard');
+  const btn = document.getElementById('exportReportBtn');
+  btn.disabled = true;
+  btn.textContent = '생성 중...';
+  try {
+    const theme = document.documentElement.getAttribute('data-theme');
+    const bg = theme === 'dark' ? '#0b1220' : '#ffffff';
+    const canvas = await html2canvas(target, { backgroundColor: bg, scale: 2, useCORS: true });
+    const link = document.createElement('a');
+    link.download = `콘텐츠현황_${currentMonth === 'summary' ? '전체' : currentMonth}_${new Date().toISOString().slice(0, 10)}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  } catch (err) {
+    alert('이미지 저장 실패: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '현재 뷰 PNG 저장';
+  }
+});
 
 function renderHBarChart(containerId, items) {
   const container = document.getElementById(containerId);
