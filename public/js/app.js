@@ -77,7 +77,13 @@ uploadBtn.addEventListener('click', async () => {
 
     if (!res.ok) throw new Error(data.error);
 
-    showStatus(`${data.rowCount}건의 데이터를 변환했습니다.`, 'success');
+    const fieldLabels = {
+      name: '이름', email: '이메일', phone: '휴대폰', dept: '부서',
+      rank: '직급', job: '직무', product: '상품명', empId: '사번',
+    };
+    const mapped = (data.mappedFields || []).map(f => fieldLabels[f] || f).join(', ');
+    const extraMsg = mapped ? ` (인식된 컬럼: ${mapped})` : '';
+    showStatus(`${data.rowCount}건의 데이터를 변환했습니다.${extraMsg}`, 'success');
     renderSheets(data.sheets);
   } catch (err) {
     console.error('Upload error:', err);
