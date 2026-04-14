@@ -159,6 +159,7 @@ function render() {
       if (favorites.has(id)) favorites.delete(id);
       else favorites.add(id);
       saveFavorites();
+      updateFavBtn();
       applyFilters();
     });
   });
