@@ -203,3 +203,56 @@
 .result-url a:hover {
   text-decoration: underline;
 }
+
+.sales-summary {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow-sm);
+  animation: fadeInUp 0.3s ease;
+}
+
+.sales-title {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--text);
+  margin-bottom: 12px;
+}
+
+.sales-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.sales-k {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.sales-v {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.sales-v.sales-period {
+  font-size: 12.5px;
+  font-weight: 500;
+}
+
+.results-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  gap: 12px;
+}
+
+@media (max-width: 768px) {
+  .sales-grid { grid-template-columns: repeat(2, 1fr); }
+}

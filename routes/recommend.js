@@ -24,7 +24,7 @@ async function handleRecommendRoutes(req, res, { parseMultipart, sendJson }) {
       }
 
       // Parse sales data from uploaded file
-      const ranked = recommendFromBuffer(filePart.data, names);
+      const { ranked, summary } = recommendFromBuffer(filePart.data, names);
 
       // Get top N
       const top = ranked.slice(0, topN);
@@ -85,6 +85,7 @@ async function handleRecommendRoutes(req, res, { parseMultipart, sendJson }) {
       sendJson(res, 200, {
         total: names.length,
         recommended: results.length,
+        salesSummary: summary,
         results,
       });
     } catch (err) {

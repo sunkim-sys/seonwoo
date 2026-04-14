@@ -8,6 +8,57 @@ salesFile.addEventListener('change', (e) => {
   }
 });
 
+let lastResults = [];
+
+function renderSalesSummary(s) {
+  const box = document.getElementById('salesSummary');
+  if (!s) { box.style.display = 'none'; return; }
+  const period = s.firstDate && s.lastDate
+    ? `${s.firstDate} ~ ${s.lastDate}`
+    : '기간 정보 없음';
+  box.innerHTML = `
+    <div class="sales-title">판매 데이터 요약</div>
+    <div class="sales-grid">
+      <div><div class="sales-k">상품 수</div><div class="sales-v">${s.productCount.toLocaleString()}개</div></div>
+      <div><div class="sales-k">결제 건수</div><div class="sales-v">${s.txnCount.toLocaleString()}건</div></div>
+      <div><div class="sales-k">총 매출</div><div class="sales-v">${s.totalRevenue.toLocaleString()}원</div></div>
+      <div><div class="sales-k">기간</div><div class="sales-v sales-period">${period}</div></div>
+    </div>`;
+  box.style.display = 'block';
+}
+
+function toCsv(results) {
+  const headers = ['순위', '강의명', '카테고리', '판매가', '판매건수', '매출', '점수', '추천근거', '키워드', 'URL'];
+  const rows = results.map(r => [
+    r.rank,
+    r.name,
+    r.category || '',
+    r.price || 0,
+    r.count,
+    r.revenue || 0,
+    r.score,
+    r.reason || '',
+    (r.keywords || []).join(' '),
+    r.url || '',
+  ]);
+  const esc = v => {
+    const s = String(v ?? '');
+    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  return '\uFEFF' + [headers, ...rows].map(r => r.map(esc).join(',')).join('\n');
+}
+
+document.getElementById('exportCsvBtn').addEventListener('click', () => {
+  if (!lastResults.length) return;
+  const blob = new Blob([toCsv(lastResults)], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `강의추천_${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
 function showStatus(msg, type) {
   if (type === 'loading') {
     status.innerHTML = `<span class="spinner"></span><span>${msg}</span>`;
@@ -53,6 +104,8 @@ document.getElementById('analyzeBtn').addEventListener('click', async () => {
     }
 
     const data = await res.json();
+    lastResults = data.results || [];
+    renderSalesSummary(data.salesSummary);
     renderResults(data);
     showStatus(`${data.total}개 강의 중 ${data.recommended}개를 추천합니다.`, 'success');
   } catch (err) {

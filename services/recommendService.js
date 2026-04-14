@@ -6,14 +6,19 @@ function parseSalesFromBuffer(buffer) {
   const data = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
 
   const stats = {};
+  let totalTxns = 0;
+  let totalRevenue = 0;
+  const dates = [];
+
   for (let i = 1; i < data.length; i++) {
     const row = data[i];
-    const type = String(row[3] || '');   // 유형
-    const status = String(row[4] || ''); // 상태
-    const amount = Number(row[10]) || 0; // 결제 금액
-    const productName = String(row[39] || '').trim(); // 상품명
-    const category = String(row[46] || '').trim();    // 상품카테고리
-    const price = Number(row[41]) || 0;  // 판매가
+    const type = String(row[3] || '');
+    const status = String(row[4] || '');
+    const amount = Number(row[10]) || 0;
+    const productName = String(row[39] || '').trim();
+    const category = String(row[46] || '').trim();
+    const price = Number(row[41]) || 0;
+    const dateRaw = row[1]; // 결제일시 (likely column B)
 
     if (type !== '결제' || status !== '완료') continue;
     if (!productName) continue;
@@ -29,14 +34,32 @@ function parseSalesFromBuffer(buffer) {
     }
     stats[productName].count++;
     stats[productName].totalRevenue += amount;
+    totalTxns++;
+    totalRevenue += amount;
+
+    if (dateRaw) {
+      const parsed = typeof dateRaw === 'number'
+        ? XLSX.SSF.format('yyyy-mm-dd', dateRaw)
+        : String(dateRaw).slice(0, 10);
+      if (/^\d{4}-\d{2}-\d{2}/.test(parsed)) dates.push(parsed);
+    }
   }
 
-  console.log(`[Sales] Parsed ${Object.keys(stats).length} products from upload`);
-  return stats;
+  dates.sort();
+  const summary = {
+    productCount: Object.keys(stats).length,
+    txnCount: totalTxns,
+    totalRevenue,
+    firstDate: dates[0] || null,
+    lastDate: dates[dates.length - 1] || null,
+  };
+
+  console.log(`[Sales] Parsed ${summary.productCount} products, ${totalTxns} txns`);
+  return { stats, summary };
 }
 
 function recommendFromBuffer(buffer, candidateNames) {
-  const stats = parseSalesFromBuffer(buffer);
+  const { stats, summary } = parseSalesFromBuffer(buffer);
   const allProducts = Object.values(stats);
 
   const candidates = [];
@@ -78,7 +101,7 @@ function recommendFromBuffer(buffer, candidateNames) {
   });
 
   scored.sort((a, b) => b.score - a.score);
-  return scored;
+  return { ranked: scored, summary };
 }
 
 module.exports = { recommendFromBuffer };

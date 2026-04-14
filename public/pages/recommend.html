@@ -59,8 +59,13 @@
 
     <div class="status" id="status"></div>
 
+    <div id="salesSummary" class="sales-summary" style="display:none;"></div>
+
     <div id="results" class="results" style="display:none;">
-      <h3>추천 결과 <span id="resultSummary" class="result-summary"></span></h3>
+      <div class="results-head">
+        <h3>추천 결과 <span id="resultSummary" class="result-summary"></span></h3>
+        <button class="btn btn-download-original" id="exportCsvBtn">CSV 내보내기</button>
+      </div>
       <div id="resultList" class="result-list"></div>
     </div>
   </main>
