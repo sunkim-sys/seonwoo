@@ -1,14 +1,20 @@
 let reportData = null;
-let viewMode = 'summary'; // summary | month | quarter | range
+let viewMode = 'summary'; // summary | month | range
 let selectedMonth = null;
-let selectedQuarter = null;
 let rangeStart = null;
 let rangeEnd = null;
+let sortedMonths = []; // chronologically sorted (oldest -> newest)
 
 async function loadReport() {
   try {
     const res = await fetch('/api/report');
     reportData = await res.json();
+    // Sort months chronologically
+    sortedMonths = [...(reportData.availableMonths || [])].sort((a, b) => {
+      const ya = monthYear(a), yb = monthYear(b);
+      if (ya !== yb) return ya - yb;
+      return monthIndex(a) - monthIndex(b);
+    });
     document.getElementById('loading').style.display = 'none';
     document.getElementById('dashboard').style.display = 'block';
     setupViewTabs();
@@ -20,7 +26,6 @@ async function loadReport() {
 }
 
 function monthIndex(name) {
-  // "2026년 03월 레포트" → 3
   const m = name.match(/(\d{1,2})\s*월/);
   return m ? Number(m[1]) : 0;
 }
@@ -40,9 +45,7 @@ function setupViewTabs() {
       document.querySelectorAll('#viewModeTabs .vm-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       viewMode = btn.dataset.mode;
-      // Reset secondary state when switching tabs
       selectedMonth = null;
-      selectedQuarter = null;
       rangeStart = null;
       rangeEnd = null;
       renderSubSelector();
@@ -53,7 +56,6 @@ function setupViewTabs() {
 
 function renderSubSelector() {
   const container = document.getElementById('subSelector');
-  const months = reportData.availableMonths || [];
 
   if (viewMode === 'summary') {
     container.innerHTML = '';
@@ -61,7 +63,10 @@ function renderSubSelector() {
   }
 
   if (viewMode === 'month') {
-    container.innerHTML = months.map((name, i) => `
+    if (!selectedMonth && sortedMonths.length > 0) {
+      selectedMonth = sortedMonths[sortedMonths.length - 1];
+    }
+    container.innerHTML = sortedMonths.map(name => `
       <button class="sub-btn ${selectedMonth === name ? 'active' : ''}" data-month="${name}">${shortLabel(name)}</button>
     `).join('');
     container.querySelectorAll('.sub-btn').forEach(btn => {
@@ -71,41 +76,13 @@ function renderSubSelector() {
         renderView();
       });
     });
-    if (!selectedMonth && months.length > 0) {
-      selectedMonth = months[months.length - 1];
-      renderSubSelector();
-    }
-    return;
-  }
-
-  if (viewMode === 'quarter') {
-    // Group by year, render Q1~Q4 buttons per year
-    const years = [...new Set(months.map(monthYear))].filter(Boolean).sort();
-    let html = '';
-    years.forEach(year => {
-      html += `<div class="quarter-group"><span class="quarter-year">${year}년</span>`;
-      [1, 2, 3, 4].forEach(q => {
-        const start = (q - 1) * 3 + 1;
-        const end = q * 3;
-        const has = months.some(m => monthYear(m) === year && monthIndex(m) >= start && monthIndex(m) <= end);
-        const key = `${year}-Q${q}`;
-        html += `<button class="sub-btn ${selectedQuarter === key ? 'active' : ''} ${has ? '' : 'disabled'}" data-q="${key}" ${has ? '' : 'disabled'}>Q${q}</button>`;
-      });
-      html += `</div>`;
-    });
-    container.innerHTML = html;
-    container.querySelectorAll('.sub-btn:not(.disabled)').forEach(btn => {
-      btn.addEventListener('click', () => {
-        selectedQuarter = btn.dataset.q;
-        renderSubSelector();
-        renderView();
-      });
-    });
     return;
   }
 
   if (viewMode === 'range') {
-    const opts = months.map(m => `<option value="${m}">${shortLabel(m)}</option>`).join('');
+    if (!rangeStart && sortedMonths.length > 0) rangeStart = sortedMonths[0];
+    if (!rangeEnd && sortedMonths.length > 0) rangeEnd = sortedMonths[sortedMonths.length - 1];
+    const opts = sortedMonths.map(m => `<option value="${m}">${shortLabel(m)}</option>`).join('');
     container.innerHTML = `
       <div class="range-picker">
         <label>시작</label>
@@ -118,10 +95,8 @@ function renderSubSelector() {
     `;
     const startSel = document.getElementById('rangeStartSel');
     const endSel = document.getElementById('rangeEndSel');
-    if (rangeStart) startSel.value = rangeStart;
-    if (rangeEnd) endSel.value = rangeEnd;
-    else endSel.value = months[months.length - 1];
-
+    startSel.value = rangeStart;
+    endSel.value = rangeEnd;
     document.getElementById('applyRangeBtn').addEventListener('click', () => {
       rangeStart = startSel.value;
       rangeEnd = endSel.value;
@@ -132,25 +107,12 @@ function renderSubSelector() {
 }
 
 function getRangeMonths() {
-  // Returns ordered array of monthly sheet names within current view's range.
-  const months = reportData.availableMonths || [];
-  if (viewMode === 'summary' || viewMode === 'month') return [];
-  if (viewMode === 'quarter' && selectedQuarter) {
-    const [yStr, qStr] = selectedQuarter.split('-Q');
-    const year = Number(yStr);
-    const q = Number(qStr);
-    const start = (q - 1) * 3 + 1;
-    const end = q * 3;
-    return months.filter(m => monthYear(m) === year && monthIndex(m) >= start && monthIndex(m) <= end);
-  }
-  if (viewMode === 'range' && rangeStart && rangeEnd) {
-    const i1 = months.indexOf(rangeStart);
-    const i2 = months.indexOf(rangeEnd);
-    if (i1 < 0 || i2 < 0) return [];
-    const [a, b] = i1 <= i2 ? [i1, i2] : [i2, i1];
-    return months.slice(a, b + 1);
-  }
-  return [];
+  if (viewMode !== 'range' || !rangeStart || !rangeEnd) return [];
+  const i1 = sortedMonths.indexOf(rangeStart);
+  const i2 = sortedMonths.indexOf(rangeEnd);
+  if (i1 < 0 || i2 < 0) return [];
+  const [a, b] = i1 <= i2 ? [i1, i2] : [i2, i1];
+  return sortedMonths.slice(a, b + 1);
 }
 
 function renderView() {
@@ -165,11 +127,11 @@ function renderView() {
   if (viewMode === 'month') {
     if (!selectedMonth) return;
     labelEl.textContent = shortLabel(selectedMonth);
-    renderMonthly(reportData.months[selectedMonth]);
+    renderMonthlyOnly(reportData.months[selectedMonth], selectedMonth);
     return;
   }
 
-  // quarter / range
+  // range
   const range = getRangeMonths();
   if (range.length === 0) {
     document.getElementById('trendChart').innerHTML = '<p style="text-align:center;color:#94a3b8;padding:40px;">선택된 기간이 없습니다.</p>';
@@ -177,7 +139,6 @@ function renderView() {
     document.getElementById('allplanTop').innerHTML = '';
     document.getElementById('categoryTopsSection').style.display = 'none';
     document.getElementById('categoryRankSection').style.display = 'none';
-    if (viewMode === 'quarter') labelEl.textContent = '분기를 선택하세요';
     return;
   }
 
@@ -185,31 +146,19 @@ function renderView() {
   const lastData = reportData.months[lastMonth];
   if (!lastData) return;
 
-  // Range label
-  const startLabel = shortLabel(range[0]);
-  const endLabel = shortLabel(range[range.length - 1]);
-  if (viewMode === 'quarter') {
-    labelEl.textContent = `${selectedQuarter.replace('-', '년 ')} (${startLabel} ~ ${endLabel})`;
-  } else {
-    labelEl.textContent = `${startLabel} ~ ${endLabel}`;
-  }
+  labelEl.textContent = `${shortLabel(range[0])} ~ ${shortLabel(range[range.length - 1])}`;
 
-  // Trend = slice of last month's monthlyTrend by month range
-  const trendMonths = range.map(name => monthIndex(name));
-  const slicedTrend = lastData.monthlyTrend.filter(t => {
-    const num = Number(t.month.replace(/[^0-9]/g, ''));
-    return trendMonths.includes(num);
+  const trendMonthNums = range.map(monthIndex);
+  const slicedTrend = (lastData.monthlyTrend || []).filter(t => {
+    const num = Number(String(t.month).replace(/[^0-9]/g, ''));
+    return trendMonthNums.includes(num);
   });
 
-  if (slicedTrend.length > 0) {
-    renderTrendChart(slicedTrend);
-  } else {
-    renderTrendChart(lastData.monthlyTrend);
-  }
+  if (slicedTrend.length > 0) renderTrendChart(slicedTrend);
+  else renderTrendChart(lastData.monthlyTrend);
 
   renderTopList('singleTop', lastData.singleTop10);
   renderTopList('allplanTop', lastData.allplanTop10);
-
   document.getElementById('categoryRankSection').style.display = 'none';
 
   const cats = Object.keys(lastData.categoryTops);
@@ -226,31 +175,32 @@ function renderView() {
 
 function renderSummary() {
   const s = reportData.summary;
-  const firstMonth = reportData.availableMonths[0];
-  if (firstMonth && reportData.months[firstMonth]) {
-    renderTrendChart(reportData.months[firstMonth].monthlyTrend);
+  const lastMonth = sortedMonths[sortedMonths.length - 1];
+  if (lastMonth && reportData.months[lastMonth]) {
+    renderTrendChart(reportData.months[lastMonth].monthlyTrend);
   }
-
   renderTopList('singleTop', s.singleTop10);
   renderTopList('allplanTop', s.allplanTop10);
-
   document.getElementById('categoryRankSection').style.display = 'block';
   renderHBarChart('categoryChart', s.categoryRank.map(c => ({ label: c.category, value: c.count })));
   renderHBarChart('subCategoryChart', s.categoryRank.map(c => ({ label: c.subCategory, value: c.subCount })).filter(c => c.label && c.value));
-
   document.getElementById('categoryTopsSection').style.display = 'none';
 }
 
-function renderMonthly(data) {
+function renderMonthlyOnly(data, monthName) {
   if (!data) return;
 
-  if (data.monthlyTrend.length > 0) {
-    renderTrendChart(data.monthlyTrend);
-  }
+  // Filter trend to only the selected month
+  const targetIdx = monthIndex(monthName);
+  const trend = (data.monthlyTrend || []).filter(t => {
+    const num = Number(String(t.month).replace(/[^0-9]/g, ''));
+    return num === targetIdx;
+  });
+  if (trend.length > 0) renderTrendChart(trend);
+  else renderTrendChart(data.monthlyTrend || []);
 
   renderTopList('singleTop', data.singleTop10);
   renderTopList('allplanTop', data.allplanTop10);
-
   document.getElementById('categoryRankSection').style.display = 'none';
 
   const cats = Object.keys(data.categoryTops);
@@ -393,7 +343,6 @@ document.getElementById('exportReportBtn').addEventListener('click', async () =>
     const link = document.createElement('a');
     let suffix = '전체';
     if (viewMode === 'month' && selectedMonth) suffix = shortLabel(selectedMonth);
-    else if (viewMode === 'quarter' && selectedQuarter) suffix = selectedQuarter;
     else if (viewMode === 'range' && rangeStart && rangeEnd) suffix = `${shortLabel(rangeStart)}_${shortLabel(rangeEnd)}`;
     link.download = `콘텐츠현황_${suffix}_${new Date().toISOString().slice(0, 10)}.png`;
     link.href = canvas.toDataURL('image/png');
