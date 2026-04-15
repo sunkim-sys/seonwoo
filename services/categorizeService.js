@@ -1,14 +1,10 @@
 const https = require('https');
-const fs = require('fs');
-const path = require('path');
+const { loadApiKey } = require('./aiService');
 
 function getApiKey() {
-  if (process.env.GROQ_API_KEY) return process.env.GROQ_API_KEY.trim();
-  try {
-    const content = fs.readFileSync(path.join(__dirname, '..', '.env'), 'utf-8');
-    const m = content.match(/GROQ_API_KEY=(.+)/);
-    return m ? m[1].trim() : '';
-  } catch { return ''; }
+  const key = loadApiKey();
+  console.log(`[Categorize] API key loaded: ${key ? key.slice(0, 8) + '...' : '(empty)'}`);
+  return key;
 }
 
 const CATEGORY_TREE = {
