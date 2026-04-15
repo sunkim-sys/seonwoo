@@ -73,12 +73,13 @@ function buildStyledWorkbook(opts) {
   } = opts;
 
   const aoa = [];
-  const titleRow = 0;
-  const subtitleRow = subtitle ? 1 : -1;
-  const headerRow = subtitle ? 2 : 1;
+  const hasTitle = Boolean(title);
+  const titleRow = hasTitle ? 0 : -1;
+  const subtitleRow = hasTitle && subtitle ? 1 : -1;
+  const headerRow = hasTitle ? (subtitle ? 2 : 1) : 0;
 
-  aoa.push([title, ...Array(headers.length - 1).fill('')]);
-  if (subtitle) aoa.push([subtitle, ...Array(headers.length - 1).fill('')]);
+  if (hasTitle) aoa.push([title, ...Array(headers.length - 1).fill('')]);
+  if (hasTitle && subtitle) aoa.push([subtitle, ...Array(headers.length - 1).fill('')]);
   aoa.push(headers);
   rows.forEach(r => aoa.push(r));
 
@@ -86,13 +87,13 @@ function buildStyledWorkbook(opts) {
 
   // Merge title / subtitle across all columns
   ws['!merges'] = ws['!merges'] || [];
-  ws['!merges'].push({ s: { r: titleRow, c: 0 }, e: { r: titleRow, c: headers.length - 1 } });
-  if (subtitle) ws['!merges'].push({ s: { r: subtitleRow, c: 0 }, e: { r: subtitleRow, c: headers.length - 1 } });
+  if (hasTitle) ws['!merges'].push({ s: { r: titleRow, c: 0 }, e: { r: titleRow, c: headers.length - 1 } });
+  if (subtitleRow >= 0) ws['!merges'].push({ s: { r: subtitleRow, c: 0 }, e: { r: subtitleRow, c: headers.length - 1 } });
 
   // Row heights
   ws['!rows'] = [];
-  ws['!rows'][titleRow] = { hpt: 30 };
-  if (subtitle) ws['!rows'][subtitleRow] = { hpt: 20 };
+  if (hasTitle) ws['!rows'][titleRow] = { hpt: 30 };
+  if (subtitleRow >= 0) ws['!rows'][subtitleRow] = { hpt: 20 };
   ws['!rows'][headerRow] = { hpt: 28 };
 
   // Column widths
@@ -114,8 +115,8 @@ function buildStyledWorkbook(opts) {
       const cell = ws[addr];
       if (!cell) continue;
 
-      if (r === titleRow) styleTitle(cell);
-      else if (r === subtitleRow) styleSub(cell);
+      if (hasTitle && r === titleRow) styleTitle(cell);
+      else if (subtitleRow >= 0 && r === subtitleRow) styleSub(cell);
       else if (r === headerRow) styleHeader(cell);
       else {
         const zebra = (r - headerRow) % 2 === 0;

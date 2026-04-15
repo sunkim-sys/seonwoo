@@ -56,8 +56,6 @@ async function handleIpgwaRoutes(req, res, { parseMultipart, sendJson }) {
       ];
       const buffer = buildStyledWorkbook({
         sheetName: 'Main',
-        title: '입과 템플릿 샘플',
-        subtitle: '컬럼 순서는 자유롭게 바꿔도 됩니다 (헤더 이름으로 매핑).',
         headers,
         rows,
         widths: [
