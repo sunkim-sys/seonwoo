@@ -26,11 +26,20 @@
   <main class="main report-main">
     <h2>콘텐츠 현황 레포트</h2>
 
-    <!-- 월 선택 -->
+    <!-- 뷰 모드 탭 -->
     <div class="report-actions-bar">
-      <div class="month-selector" id="monthSelector"></div>
+      <div class="view-mode-tabs" id="viewModeTabs">
+        <button class="vm-btn active" data-mode="summary">전체 누적</button>
+        <button class="vm-btn" data-mode="month">월별</button>
+        <button class="vm-btn" data-mode="quarter">분기별</button>
+        <button class="vm-btn" data-mode="range">기간 선택</button>
+      </div>
       <button id="exportReportBtn" class="btn-export-report">현재 뷰 PNG 저장</button>
     </div>
+
+    <!-- 세부 선택자 -->
+    <div class="sub-selector" id="subSelector"></div>
+    <div class="range-label" id="rangeLabel"></div>
 
     <!-- 상세 모달 -->
     <div id="reportModal" class="report-modal" style="display:none;">
