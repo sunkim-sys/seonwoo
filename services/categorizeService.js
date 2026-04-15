@@ -2,7 +2,7 @@ const https = require('https');
 const fs = require('fs');
 const path = require('path');
 
-function loadApiKey() {
+function getApiKey() {
   if (process.env.GROQ_API_KEY) return process.env.GROQ_API_KEY.trim();
   try {
     const content = fs.readFileSync(path.join(__dirname, '..', '.env'), 'utf-8');
@@ -10,8 +10,6 @@ function loadApiKey() {
     return m ? m[1].trim() : '';
   } catch { return ''; }
 }
-
-const API_KEY = loadApiKey();
 
 const CATEGORY_TREE = {
   'AI TECH': ['LLM/응용', '머신러닝', '딥러닝', '컴퓨터 비전', '자연어 처리', 'MLOps/강화학습'],
@@ -51,6 +49,8 @@ ${tree}
 }
 
 function callGroq(systemPrompt, userPrompt) {
+  const apiKey = getApiKey();
+  if (!apiKey) return Promise.reject(new Error('AI API 키가 설정되지 않았습니다. (GROQ_API_KEY 환경변수 확인 필요)'));
   return new Promise((resolve, reject) => {
     const data = JSON.stringify({
       model: 'llama-3.3-70b-versatile',
@@ -66,7 +66,7 @@ function callGroq(systemPrompt, userPrompt) {
       path: '/openai/v1/chat/completions',
       method: 'POST',
       headers: {
-        'Authorization': 'Bearer ' + API_KEY,
+        'Authorization': 'Bearer ' + apiKey,
         'Content-Type': 'application/json',
         'Content-Length': Buffer.byteLength(data),
       },
@@ -98,8 +98,6 @@ function validateAssignment(item) {
 }
 
 async function classifyLectures(lectures) {
-  if (!API_KEY) throw new Error('AI API 키가 설정되지 않았습니다.');
-
   const sysPrompt = buildSystemPrompt();
   const list = lectures.map((l, i) => {
     const intro = (l.intro || '').slice(0, 400);

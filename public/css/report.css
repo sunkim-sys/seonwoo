@@ -215,10 +215,14 @@
 }
 
 .bar-value {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
-  color: #1e293b;
+  color: #0f172a;
   margin-bottom: 4px;
+  background: rgba(255, 255, 255, 0.85);
+  padding: 1px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
 }
 
 .bar {
@@ -517,9 +521,13 @@
 
 :root[data-theme="dark"] .top-category,
 :root[data-theme="dark"] .top-count,
-:root[data-theme="dark"] .bar-value,
 :root[data-theme="dark"] .bar-label {
   color: var(--text-muted);
+}
+
+:root[data-theme="dark"] .bar-value {
+  color: #f1f5f9;
+  background: rgba(15, 23, 42, 0.85);
 }
 
 :root[data-theme="dark"] .month-btn {
