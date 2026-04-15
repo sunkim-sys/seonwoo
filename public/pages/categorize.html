@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Web Tools - 카테고리 자동 분류</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/categorize.css">
+</head>
+<body>
+  <div class="topbar">
+    <button id="sidebarToggle" aria-label="메뉴">☰</button>
+    <button id="themeToggle" aria-label="테마">🌙</button>
+  </div>
+  <aside class="sidebar">
+    <h1>Web Tools</h1>
+    <nav>
+      <a href="/">입과 템플릿 변환</a>
+      <a href="/pages/lecture-info.html">강의 정보 정리</a>
+      <a href="/pages/recommend.html">강의 추천</a>
+      <a href="/pages/catalog.html">과정 리스트</a>
+      <a href="/pages/categorize.html" class="active">카테고리 자동 분류</a>
+      <a href="/pages/report.html">콘텐츠 현황</a>
+    </nav>
+  </aside>
+
+  <main class="main">
+    <h2>카테고리 자동 분류</h2>
+    <p class="desc">신규 강의명과 강의 소개를 입력하면 AI가 정해진 카테고리 체계에 자동 분류합니다.</p>
+
+    <div class="input-section">
+      <h3>강의 입력</h3>
+      <p class="hint">한 강의당 한 블록. 강의명만 넣어도 되고, 강의 소개를 같이 넣으면 정확도가 올라갑니다. 한 번에 최대 50개.</p>
+      <textarea id="lectureInput" rows="12" placeholder="강의명: 유니티 게임 포트폴리오 완성
+소개: Unity 엔진을 사용하여 모바일 게임을 만드는 과정...
+
+강의명: 김민태의 프론트엔드 아카데미
+소개: JavaScript와 TypeScript의 기초를 다지는 강의...
+
+또는 간단히 강의명만:
+프롬프트 엔지니어링 입문
+경영자를 위한 회계"></textarea>
+      <div class="lc-counter" id="lcCounter">0개 강의</div>
+    </div>
+
+    <div class="action-bar">
+      <button class="btn btn-primary" id="classifyBtn">AI 분류</button>
+    </div>
+
+    <div class="status" id="status"></div>
+
+    <div id="results" class="cz-results" style="display:none;">
+      <div class="cz-results-head">
+        <h3>분류 결과 <span id="resultCount" class="cz-result-count"></span></h3>
+        <button class="btn btn-download-original" id="downloadBtn">엑셀 다운로드</button>
+      </div>
+      <div id="resultList" class="cz-result-list"></div>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="/js/layout.js"></script>
+  <script src="/js/categorize.js"></script>
+</body>
+</html>
