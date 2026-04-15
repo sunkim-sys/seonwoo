@@ -9,6 +9,50 @@ const validation = document.getElementById('validation');
 
 let selectedFile = null;
 
+// --- Flexible date input ---
+function normalizeDate(s) {
+  if (!s) return '';
+  const cleaned = String(s).trim().replace(/\s+/g, '');
+  // YYYYMMDD
+  let m = cleaned.match(/^(\d{4})(\d{2})(\d{2})$/);
+  if (m) return `${m[1]}-${m[2]}-${m[3]}`;
+  // YYYY[-./]MM[-./]DD
+  m = cleaned.match(/^(\d{4})[-./](\d{1,2})[-./](\d{1,2})$/);
+  if (m) {
+    const mm = m[2].padStart(2, '0');
+    const dd = m[3].padStart(2, '0');
+    return `${m[1]}-${mm}-${dd}`;
+  }
+  return cleaned;
+}
+
+function setupDateCombos() {
+  document.querySelectorAll('.date-combo').forEach(combo => {
+    const text = combo.querySelector('input[type="text"]');
+    const picker = combo.querySelector('input[type="date"]');
+    const btn = combo.querySelector('.date-icon-btn');
+
+    text.addEventListener('blur', () => {
+      const norm = normalizeDate(text.value);
+      text.value = norm;
+      if (/^\d{4}-\d{2}-\d{2}$/.test(norm)) picker.value = norm;
+    });
+
+    picker.addEventListener('change', () => {
+      text.value = picker.value;
+    });
+
+    btn.addEventListener('click', () => {
+      if (typeof picker.showPicker === 'function') {
+        try { picker.showPicker(); return; } catch (e) {}
+      }
+      picker.focus();
+      picker.click();
+    });
+  });
+}
+setupDateCombos();
+
 // Click to select file
 uploadArea.addEventListener('click', () => fileInput.click());
 
@@ -62,8 +106,8 @@ uploadBtn.addEventListener('click', async () => {
   formData.append('file', selectedFile);
   formData.append('productId', document.getElementById('productId').value);
   formData.append('courseId', document.getElementById('courseId').value);
-  formData.append('startDate', document.getElementById('startDate').value);
-  formData.append('endDate', document.getElementById('endDate').value);
+  formData.append('startDate', normalizeDate(document.getElementById('startDate').value));
+  formData.append('endDate', normalizeDate(document.getElementById('endDate').value));
 
   try {
     console.log('Uploading file:', selectedFile.name, selectedFile.size, 'bytes');

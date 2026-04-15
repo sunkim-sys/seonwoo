@@ -51,11 +51,19 @@
         </div>
         <div class="input-group">
           <label for="startDate">수강 시작일</label>
-          <input type="date" id="startDate">
+          <div class="date-combo">
+            <input type="text" id="startDate" placeholder="YYYY-MM-DD" autocomplete="off">
+            <input type="date" class="date-picker-hidden" data-target="startDate">
+            <button type="button" class="date-icon-btn" data-target="startDate" aria-label="달력">📅</button>
+          </div>
         </div>
         <div class="input-group">
           <label for="endDate">수강 종료일</label>
-          <input type="date" id="endDate">
+          <div class="date-combo">
+            <input type="text" id="endDate" placeholder="YYYY-MM-DD" autocomplete="off">
+            <input type="date" class="date-picker-hidden" data-target="endDate">
+            <button type="button" class="date-icon-btn" data-target="endDate" aria-label="달력">📅</button>
+          </div>
         </div>
       </div>
     </div>
