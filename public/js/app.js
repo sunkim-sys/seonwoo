@@ -128,7 +128,8 @@ uploadBtn.addEventListener('click', async () => {
     };
     const mapped = (data.mappedFields || []).map(f => fieldLabels[f] || f).join(', ');
     const extraMsg = mapped ? ` (인식된 컬럼: ${mapped})` : '';
-    showStatus(`${data.rowCount}건의 데이터를 변환했습니다.${extraMsg}`, 'success');
+    const cleansedMsg = data.cleansedCount > 0 ? ` · 자동 정리 ${data.cleansedCount}건` : '';
+    showStatus(`${data.rowCount}건의 데이터를 변환했습니다.${extraMsg}${cleansedMsg}`, 'success');
     renderValidation(data.issues || []);
     renderSheets(data.sheets);
   } catch (err) {
@@ -144,15 +145,17 @@ function renderValidation(issues) {
   if (!issues.length) {
     validation.innerHTML = `
       <div class="validation-box ok">
-        <div class="validation-title">✓ 이메일·휴대폰 형식 이상 없음</div>
+        <div class="validation-title">✓ 이메일·휴대폰 형식 이상 없음, 중복 없음</div>
       </div>`;
     return;
   }
+  const fmtCount = issues.filter(i => i.type !== 'duplicate').length;
+  const dupCount = issues.filter(i => i.type === 'duplicate').length;
   const rows = issues.map((i, idx) => `
-    <tr data-issue-idx="${idx}">
+    <tr data-issue-idx="${idx}" class="v-${i.type === 'duplicate' ? 'dup' : 'fmt'}">
       <td class="v-row">${i.rowNumber}행</td>
       <td class="v-name">${escapeHtml(i.name)}</td>
-      <td class="v-field">${i.field}</td>
+      <td class="v-field">${i.field}${i.type === 'duplicate' ? ' <span class="v-tag-dup">중복</span>' : ''}</td>
       <td class="v-value">
         <input type="text"
           class="v-input"
@@ -165,9 +168,12 @@ function renderValidation(issues) {
       <td class="v-reason">${escapeHtml(i.reason)}</td>
     </tr>
   `).join('');
+  const titleParts = [];
+  if (fmtCount > 0) titleParts.push(`형식 오류 ${fmtCount}건`);
+  if (dupCount > 0) titleParts.push(`중복 ${dupCount}건`);
   validation.innerHTML = `
     <div class="validation-box warn">
-      <div class="validation-title">⚠ 확인이 필요한 항목 ${issues.length}건</div>
+      <div class="validation-title">⚠ ${titleParts.join(' · ')}</div>
       <div class="validation-hint">값을 직접 고친 뒤 <b>수정 적용</b>을 누르면 결과 파일과 원본(수정본) 모두 반영됩니다.</div>
       <div class="validation-table-wrap">
         <table class="validation-table">

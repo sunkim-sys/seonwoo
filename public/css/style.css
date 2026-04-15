@@ -728,6 +728,26 @@ body {
   text-align: right;
 }
 
+.validation-table tr.v-dup { background: rgba(234, 179, 8, 0.10); }
+.validation-table tr.v-fmt { background: rgba(239, 68, 68, 0.06); }
+:root[data-theme="dark"] .validation-table tr.v-dup { background: rgba(234, 179, 8, 0.18); }
+:root[data-theme="dark"] .validation-table tr.v-fmt { background: rgba(239, 68, 68, 0.15); }
+
+.v-tag-dup {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  background: #fef3c7;
+  color: #92400e;
+  padding: 1px 6px;
+  border-radius: 999px;
+  margin-left: 4px;
+}
+:root[data-theme="dark"] .v-tag-dup {
+  background: rgba(234, 179, 8, 0.25);
+  color: #fde68a;
+}
+
 .validation-actions .btn {
   padding: 10px 20px;
   font-size: 13px;

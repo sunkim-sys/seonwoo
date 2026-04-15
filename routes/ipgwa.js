@@ -1,4 +1,4 @@
-const { SHEET_CONFIGS, parseMainSheet, generateSheet, generatePreview, validateRows, applyCorrections, generateOriginalSheet } = require('../services/ipgwaService');
+const { SHEET_CONFIGS, parseMainSheet, generateSheet, generatePreview, validateRows, applyCorrections, generateOriginalSheet, autoCleanse } = require('../services/ipgwaService');
 const { buildStyledWorkbook } = require('../services/styledXlsx');
 
 async function handleIpgwaRoutes(req, res, { parseMultipart, sendJson }) {
@@ -13,8 +13,8 @@ async function handleIpgwaRoutes(req, res, { parseMultipart, sendJson }) {
 
     try {
       const parsed = parseMainSheet(filePart.data);
+      const cleansedCount = autoCleanse(parsed);
 
-      // Parse extra fields from form
       const extras = {};
       parts.filter(p => !p.filename).forEach(p => {
         extras[p.name] = p.data.toString('utf-8').trim();
@@ -36,6 +36,7 @@ async function handleIpgwaRoutes(req, res, { parseMultipart, sendJson }) {
         rowCount: parsed.rows.length,
         detectedHeaders: parsed.rawHeaders,
         mappedFields: Object.keys(parsed.headerIndex),
+        cleansedCount,
         issues,
         sheets,
       });

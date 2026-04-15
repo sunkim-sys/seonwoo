@@ -153,14 +153,14 @@ function validateRows(parsed) {
   const { rows, headerIndex } = parsed;
   const issues = [];
   rows.forEach((row, i) => {
-    const rowNumber = i + 2; // +1 for header, +1 for 1-based
+    const rowNumber = i + 2;
     const name = get(row, headerIndex, 'name');
 
     if (headerIndex.email !== undefined) {
       const email = get(row, headerIndex, 'email');
       const err = validateEmail(email);
       if (err) {
-        issues.push({ rowNumber, field: '이메일', name, value: email, reason: err });
+        issues.push({ rowNumber, field: '이메일', name, value: email, reason: err, type: 'format' });
       }
     }
 
@@ -168,11 +168,90 @@ function validateRows(parsed) {
       const phone = get(row, headerIndex, 'phone');
       const err = validatePhone(phone);
       if (err) {
-        issues.push({ rowNumber, field: '휴대폰', name, value: phone, reason: err });
+        issues.push({ rowNumber, field: '휴대폰', name, value: phone, reason: err, type: 'format' });
       }
     }
   });
+
+  // Duplicate detection
+  function findDups(field, label) {
+    if (headerIndex[field] === undefined) return;
+    const map = new Map();
+    rows.forEach((row, i) => {
+      const v = String(row[headerIndex[field]] || '').trim().toLowerCase();
+      if (!v) return;
+      if (!map.has(v)) map.set(v, []);
+      map.get(v).push(i);
+    });
+    for (const [val, idxs] of map.entries()) {
+      if (idxs.length > 1) {
+        const otherRows = idxs.map(j => j + 2);
+        idxs.forEach(i => {
+          const dupRows = otherRows.filter(r => r !== i + 2);
+          issues.push({
+            rowNumber: i + 2,
+            name: get(rows[i], headerIndex, 'name'),
+            field: label,
+            value: rows[i][headerIndex[field]],
+            reason: `중복 (${idxs.length}건: ${dupRows.join(', ')}행과 동일)`,
+            type: 'duplicate',
+          });
+        });
+      }
+    }
+  }
+  findDups('email', '이메일');
+  findDups('phone', '휴대폰');
+
   return issues;
+}
+
+// Auto-cleanse functions: light normalization on parse
+function cleanseName(v) {
+  if (v === null || v === undefined) return '';
+  return String(v).trim().replace(/\s+/g, ' ');
+}
+function cleanseEmail(v) {
+  if (v === null || v === undefined) return '';
+  return String(v).trim().toLowerCase().replace(/\s+/g, '');
+}
+function cleansePhone(v) {
+  if (v === null || v === undefined) return '';
+  let digits = String(v).replace(/\D/g, '');
+  if (digits.startsWith('82') && digits.length >= 12) digits = '0' + digits.slice(2);
+  if (/^010\d{8}$/.test(digits)) {
+    return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`;
+  }
+  // Don't auto-mangle other formats — leave for manual review
+  return String(v).trim();
+}
+
+function autoCleanse(parsed) {
+  const { rows, headerIndex } = parsed;
+  let changed = 0;
+  rows.forEach(row => {
+    if (headerIndex.name !== undefined) {
+      const o = row[headerIndex.name];
+      const c = cleanseName(o);
+      if (String(o ?? '') !== c) { row[headerIndex.name] = c; changed++; }
+    }
+    if (headerIndex.email !== undefined) {
+      const o = row[headerIndex.email];
+      const c = cleanseEmail(o);
+      if (String(o ?? '') !== c) { row[headerIndex.email] = c; changed++; }
+    }
+    if (headerIndex.phone !== undefined) {
+      const o = row[headerIndex.phone];
+      const c = cleansePhone(o);
+      if (String(o ?? '') !== c) { row[headerIndex.phone] = c; changed++; }
+    }
+    if (headerIndex.dept !== undefined) {
+      const o = row[headerIndex.dept];
+      const c = cleanseName(o);
+      if (String(o ?? '') !== c) { row[headerIndex.dept] = c; changed++; }
+    }
+  });
+  return changed;
 }
 
 function parseMainSheet(buffer) {
@@ -243,4 +322,4 @@ function generateSheet(parsed, config, extras = {}) {
   return XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
 }
 
-module.exports = { SHEET_CONFIGS, parseMainSheet, generateSheet, generatePreview, validateRows, applyCorrections, generateOriginalSheet };
+module.exports = { SHEET_CONFIGS, parseMainSheet, generateSheet, generatePreview, validateRows, applyCorrections, generateOriginalSheet, autoCleanse };
