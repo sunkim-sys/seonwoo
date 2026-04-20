@@ -1,11 +1,5 @@
 const https = require('https');
-const { loadApiKey } = require('./aiService');
-
-function getApiKey() {
-  const key = loadApiKey();
-  console.log(`[Categorize] API key loaded: ${key ? key.slice(0, 8) + '...' : '(empty)'}`);
-  return key;
-}
+const { API_KEY } = require('./aiService');
 
 const CATEGORY_TREE = {
   'AI TECH': ['LLM/응용', '머신러닝', '딥러닝', '컴퓨터 비전', '자연어 처리', 'MLOps/강화학습'],
@@ -45,8 +39,7 @@ ${tree}
 }
 
 function callGroq(systemPrompt, userPrompt) {
-  const apiKey = getApiKey();
-  if (!apiKey) return Promise.reject(new Error('AI API 키가 설정되지 않았습니다. (GROQ_API_KEY 환경변수 확인 필요)'));
+  if (!API_KEY) return Promise.reject(new Error('AI API 키가 설정되지 않았습니다. (GROQ_API_KEY 환경변수 확인 필요)'));
   return new Promise((resolve, reject) => {
     const data = JSON.stringify({
       model: 'llama-3.3-70b-versatile',
@@ -62,7 +55,7 @@ function callGroq(systemPrompt, userPrompt) {
       path: '/openai/v1/chat/completions',
       method: 'POST',
       headers: {
-        'Authorization': 'Bearer ' + apiKey,
+        'Authorization': 'Bearer ' + API_KEY,
         'Content-Type': 'application/json',
         'Content-Length': Buffer.byteLength(data),
       },

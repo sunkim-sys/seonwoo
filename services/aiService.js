@@ -159,4 +159,4 @@ ${list}
   return {};
 }
 
-module.exports = { summarizeLecture, extractKeywords, loadApiKey };
+module.exports = { summarizeLecture, extractKeywords, loadApiKey, API_KEY };
