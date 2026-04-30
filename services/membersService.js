@@ -192,19 +192,33 @@ async function runMembersDownload(companies, credentials, onProgress) {
     onProgress('로그인 중...');
     await page.goto('https://partner.skillflo.io');
     await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(1000);
 
-    // 로그인 폼 작성
+    // 로그인 폼 — React 입력 필드는 keyboard.type() 사용
     const emailSel = 'input[type="email"], input[name="email"], input[placeholder*="이메일"], input[placeholder*="아이디"]';
     const pwSel = 'input[type="password"]';
-    await page.locator(emailSel).first().fill(credentials.email);
-    await page.locator(pwSel).first().fill(credentials.password);
-    await page.keyboard.press('Enter');
+    const emailInput = page.locator(emailSel).first();
+    const pwInput = page.locator(pwSel).first();
+
+    await emailInput.click();
+    await page.keyboard.type(credentials.email, { delay: 80 });
+    await pwInput.click();
+    await page.keyboard.type(credentials.password, { delay: 80 });
+
+    // 로그인 버튼 클릭 시도, 없으면 Enter
+    const loginBtn = page.locator('button[type="submit"], button').filter({ hasText: /로그인|signin|login/i }).first();
+    if (await loginBtn.count() > 0) {
+      await loginBtn.click();
+    } else {
+      await page.keyboard.press('Enter');
+    }
 
     // 로그인 완료 대기
     await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(3000);
 
     const url = page.url();
+    onProgress(`현재 URL: ${url}`);
     if (url.includes('login') || url.includes('signin')) {
       throw new Error('로그인 실패 — 이메일/비밀번호를 확인하세요.');
     }
