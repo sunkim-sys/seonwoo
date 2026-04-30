@@ -2,11 +2,13 @@ services:
   - type: web
     name: web-tools
     runtime: node
-    buildCommand: npm install && npx playwright install --with-deps chromium
+    buildCommand: npm install && npx playwright install chromium
     startCommand: npm start
     envVars:
       - key: NODE_ENV
         value: production
+      - key: PLAYWRIGHT_BROWSERS_PATH
+        value: /opt/render/project/src/.playwright-browsers
       - key: SKILLFLO_EMAIL
         sync: false
       - key: SKILLFLO_PASSWORD
