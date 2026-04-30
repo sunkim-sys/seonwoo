@@ -52,6 +52,9 @@
     <div id="loading" class="loading">데이터를 불러오고 있습니다...</div>
 
     <div id="dashboard" style="display:none;">
+      <!-- KPI 카드 -->
+      <div id="kpiCards" class="kpi-grid"></div>
+
       <!-- 월별 추이 -->
       <div class="section">
         <h3>콘텐츠 월별 추이</h3>
@@ -90,6 +93,7 @@
     </div>
   </main>
 
+  <div id="barTooltip" class="bar-tooltip" style="display:none;pointer-events:none;position:fixed;"></div>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script src="/js/layout.js"></script>
   <script src="/js/report.js"></script>

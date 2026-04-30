@@ -139,6 +139,7 @@ function renderView() {
     document.getElementById('allplanTop').innerHTML = '';
     document.getElementById('categoryTopsSection').style.display = 'none';
     document.getElementById('categoryRankSection').style.display = 'none';
+    renderKpiCards([]);
     return;
   }
 
@@ -154,8 +155,13 @@ function renderView() {
     return trendMonthNums.includes(num);
   });
 
-  if (slicedTrend.length > 0) renderTrendChart(slicedTrend);
-  else renderTrendChart(lastData.monthlyTrend);
+  if (slicedTrend.length > 0) {
+    renderTrendChart(slicedTrend);
+    renderKpiCards(slicedTrend);
+  } else {
+    renderTrendChart(lastData.monthlyTrend);
+    renderKpiCards(lastData.monthlyTrend);
+  }
 
   renderTopList('singleTop', lastData.singleTop10);
   renderTopList('allplanTop', lastData.allplanTop10);
@@ -177,7 +183,9 @@ function renderSummary() {
   const s = reportData.summary;
   const lastMonth = sortedMonths[sortedMonths.length - 1];
   if (lastMonth && reportData.months[lastMonth]) {
-    renderTrendChart(reportData.months[lastMonth].monthlyTrend);
+    const trend = reportData.months[lastMonth].monthlyTrend;
+    renderTrendChart(trend);
+    renderKpiCards(trend);
   }
   renderTopList('singleTop', s.singleTop10);
   renderTopList('allplanTop', s.allplanTop10);
@@ -196,8 +204,13 @@ function renderMonthlyOnly(data, monthName) {
     const num = Number(String(t.month).replace(/[^0-9]/g, ''));
     return num === targetIdx;
   });
-  if (trend.length > 0) renderTrendChart(trend);
-  else renderTrendChart(data.monthlyTrend || []);
+  if (trend.length > 0) {
+    renderTrendChart(trend);
+    renderKpiCards(trend);
+  } else {
+    renderTrendChart(data.monthlyTrend || []);
+    renderKpiCards(data.monthlyTrend || []);
+  }
 
   renderTopList('singleTop', data.singleTop10);
   renderTopList('allplanTop', data.allplanTop10);
@@ -232,6 +245,38 @@ function renderCategoryTop(items) {
   `).join('') + `</div>`;
 }
 
+function renderKpiCards(trend) {
+  const container = document.getElementById('kpiCards');
+  if (!trend || !trend.length) { container.innerHTML = ''; return; }
+
+  const last = trend[trend.length - 1];
+  const totalNew = trend.reduce((s, t) => s + (t.newCount || 0), 0);
+  const totalClosed = trend.reduce((s, t) => s + (t.closedCount || 0), 0);
+  const net = totalNew - totalClosed;
+
+  const hasNewClosed = totalNew > 0 || totalClosed > 0;
+
+  container.innerHTML = `
+    <div class="kpi-card">
+      <div class="kpi-label">현재 콘텐츠</div>
+      <div class="kpi-value">${last.total.toLocaleString()}<span class="kpi-unit">개</span></div>
+    </div>
+    ${hasNewClosed ? `
+    <div class="kpi-card kpi-card--up">
+      <div class="kpi-label">신규 추가</div>
+      <div class="kpi-value">+${totalNew.toLocaleString()}</div>
+    </div>
+    <div class="kpi-card kpi-card--down">
+      <div class="kpi-label">종료/삭제</div>
+      <div class="kpi-value">-${totalClosed.toLocaleString()}</div>
+    </div>
+    <div class="kpi-card ${net >= 0 ? 'kpi-card--up' : 'kpi-card--down'}">
+      <div class="kpi-label">순증</div>
+      <div class="kpi-value">${net >= 0 ? '+' : ''}${net.toLocaleString()}</div>
+    </div>` : ''}
+  `;
+}
+
 function renderTrendChart(trend) {
   const container = document.getElementById('trendChart');
   const maxVal = Math.max(...trend.map(t => t.total), 1);
@@ -248,7 +293,11 @@ function renderTrendChart(trend) {
       mom = `<div class="mom-badge ${cls}">${arrow} ${sign}${pct.toFixed(1)}%</div>`;
     }
     return `
-      <div class="bar-group">
+      <div class="bar-group"
+        data-total="${t.total}"
+        data-new="${t.newCount || 0}"
+        data-closed="${t.closedCount || 0}"
+        data-label="${t.month}">
         ${mom}
         <div class="bar-value">${t.total.toLocaleString()}</div>
         <div class="bar bar-total" style="height:${h}px;"></div>
@@ -269,6 +318,43 @@ function renderTrendChart(trend) {
     </div>
     ${detailHtml ? `<div style="text-align:center;font-size:12px;color:#64748b;margin-top:8px;">${detailHtml}</div>` : ''}
   `;
+
+  // Tooltip setup
+  const tooltip = document.getElementById('barTooltip');
+  container.querySelectorAll('.bar-group').forEach(group => {
+    group.addEventListener('mouseenter', () => {
+      const total = parseInt(group.dataset.total || '0');
+      const newC = parseInt(group.dataset.new || '0');
+      const closedC = parseInt(group.dataset.closed || '0');
+      const label = group.dataset.label || '';
+      let html = `<div class="bt-label">${label}</div>`;
+      html += `<div class="bt-row"><span class="bt-dot" style="background:#3b82f6;"></span> 총 <strong>${total.toLocaleString()}개</strong></div>`;
+      if (newC || closedC) {
+        html += `<div class="bt-row"><span class="bt-dot" style="background:#10b981;"></span> 신규 <strong>+${newC.toLocaleString()}</strong></div>`;
+        html += `<div class="bt-row"><span class="bt-dot" style="background:#ef4444;"></span> 종료 <strong>-${closedC.toLocaleString()}</strong></div>`;
+      }
+      tooltip.innerHTML = html;
+      tooltip.style.display = 'block';
+      positionTooltip(group, tooltip);
+    });
+    group.addEventListener('mousemove', () => positionTooltip(group, tooltip));
+    group.addEventListener('mouseleave', () => {
+      tooltip.style.display = 'none';
+    });
+  });
+}
+
+function positionTooltip(anchor, tooltip) {
+  const rect = anchor.getBoundingClientRect();
+  const tw = tooltip.offsetWidth || 140;
+  const th = tooltip.offsetHeight || 80;
+  let left = rect.left + rect.width / 2 - tw / 2;
+  let top = rect.top - th - 10;
+  // Prevent going off screen edges
+  left = Math.max(8, Math.min(left, window.innerWidth - tw - 8));
+  if (top < 8) top = rect.bottom + 8;
+  tooltip.style.left = left + 'px';
+  tooltip.style.top = top + 'px';
 }
 
 function renderTopList(containerId, items) {

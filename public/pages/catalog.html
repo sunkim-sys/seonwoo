@@ -49,6 +49,7 @@
           <option value="level">난이도</option>
           <option value="category">카테고리</option>
         </select>
+        <button id="filterResetBtn" class="btn-filter-reset" style="display:none;">✕ 초기화</button>
       </div>
     </div>
 
@@ -57,6 +58,7 @@
       <div class="result-actions">
         <button id="favBtn" class="btn-toggle-fav">⭐ 즐겨찾기만 보기</button>
         <button id="exportFavBtn" class="btn-export-fav">즐겨찾기 내보내기</button>
+        <button id="shareUrlBtn" class="btn-share-url">🔗 URL 복사</button>
       </div>
     </div>
 
@@ -76,7 +78,23 @@
         <div id="modalBody"></div>
       </div>
     </div>
+
+    <!-- 비교 모달 -->
+    <div id="compareModal" class="modal" style="display:none;">
+      <div class="modal-content compare-modal-content">
+        <button class="modal-close" id="compareModalClose">&times;</button>
+        <h3 class="compare-modal-title">강의 비교</h3>
+        <div id="compareBody" class="compare-grid"></div>
+      </div>
+    </div>
   </main>
+
+  <!-- 비교 플로팅 바 -->
+  <div id="compareBar" class="compare-bar" style="display:none;">
+    <span id="compareCount">0개 선택됨</span>
+    <button id="doCompareBtn" class="btn-do-compare" disabled>비교하기</button>
+    <button id="clearCompareBtn" class="btn-clear-compare">✕ 취소</button>
+  </div>
 
   <script src="/js/layout.js"></script>
   <script src="/js/catalog.js"></script>

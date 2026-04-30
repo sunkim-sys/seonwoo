@@ -9,6 +9,8 @@ const lcCounter = document.getElementById('lcCounter');
 
 let categoryTree = {};
 let lastResults = [];
+let manuallyEdited = new Set(); // 사용자가 직접 수정한 항목의 인덱스
+let showLowConfOnly = false;
 
 function parseInput(text) {
   // Split by blank line; each block can have "강의명:" / "소개:" labels
@@ -73,6 +75,10 @@ classifyBtn.addEventListener('click', async () => {
     return;
   }
 
+  // 상태 초기화
+  manuallyEdited.clear();
+  showLowConfOnly = false;
+
   classifyBtn.disabled = true;
   classifyBtn.innerHTML = '<span class="spinner"></span> 분류 중...';
   showStatus(`${lectures.length}개 강의를 AI에 분류 요청 중입니다...`, 'info');
@@ -106,20 +112,57 @@ function renderResults(results) {
     return;
   }
   resultsEl.style.display = 'block';
-  resultCountEl.textContent = `(${results.length}건)`;
 
-  resultListEl.innerHTML = results.map((r, idx) => {
+  // 저신뢰도 필터 적용
+  const lowConfIndices = results
+    .map((r, i) => ({ r, i }))
+    .filter(({ r }) => Math.round((r.confidence || 0) * 100) < 50)
+    .map(({ i }) => i);
+
+  const displayItems = showLowConfOnly
+    ? results.map((r, i) => ({ r, i })).filter(({ i }) => lowConfIndices.includes(i))
+    : results.map((r, i) => ({ r, i }));
+
+  // 필터 버튼 업데이트
+  const lowConfBtn = document.getElementById('lowConfFilterBtn');
+  if (lowConfBtn) {
+    if (showLowConfOnly) {
+      lowConfBtn.textContent = `전체 보기 (${results.length}건)`;
+      lowConfBtn.classList.add('active');
+    } else {
+      lowConfBtn.textContent = `저신뢰도만 보기 (${lowConfIndices.length}건)`;
+      lowConfBtn.classList.remove('active');
+    }
+    lowConfBtn.style.display = lowConfIndices.length === 0 ? 'none' : '';
+  }
+
+  // 건수 표시
+  if (showLowConfOnly) {
+    resultCountEl.textContent = `(${displayItems.length}/${results.length}건 표시)`;
+  } else {
+    resultCountEl.textContent = `(${results.length}건)`;
+  }
+
+  // 통계 표시
+  renderStats(results, lowConfIndices.length);
+
+  resultListEl.innerHTML = displayItems.map(({ r, i: idx }) => {
     const cats = Object.keys(categoryTree);
     const subs = categoryTree[r.category] || [];
     const conf = Math.round((r.confidence || 0) * 100);
     const confClass = conf >= 80 ? 'high' : (conf >= 50 ? 'mid' : 'low');
     const validBadge = r.valid ? '' : '<span class="cz-warn-badge">검증 실패</span>';
+    const manualBadge = manuallyEdited.has(idx) ? '<span class="cz-manual-badge">수동 수정</span>' : '';
 
     return `
-      <div class="cz-card" data-idx="${idx}">
+      <div class="cz-card ${manuallyEdited.has(idx) ? 'cz-card--edited' : ''}" data-idx="${idx}">
         <div class="cz-card-head">
           <div class="cz-name">${escapeHtml(r.name)}</div>
-          <div class="cz-conf ${confClass}" title="신뢰도">${conf}%</div>
+          <div class="cz-badges">
+            ${manualBadge}
+            ${validBadge}
+            <div class="cz-conf ${confClass}" title="AI 신뢰도">${conf}%</div>
+          </div>
         </div>
         ${r.intro ? `<div class="cz-intro">${escapeHtml(r.intro)}</div>` : ''}
         <div class="cz-grid">
@@ -137,7 +180,6 @@ function renderResults(results) {
           </div>
         </div>
         ${r.reason ? `<div class="cz-reason">💡 ${escapeHtml(r.reason)}</div>` : ''}
-        ${validBadge}
       </div>
     `;
   }).join('');
@@ -149,6 +191,7 @@ function renderResults(results) {
       const subs = categoryTree[sel.value] || [];
       lastResults[idx].subCategory = subs[0] || '';
       lastResults[idx].valid = true;
+      manuallyEdited.add(idx);
       renderResults(lastResults);
     });
   });
@@ -156,25 +199,64 @@ function renderResults(results) {
     sel.addEventListener('change', () => {
       const idx = Number(sel.dataset.idx);
       lastResults[idx].subCategory = sel.value;
+      manuallyEdited.add(idx);
     });
   });
 }
 
+function renderStats(results, lowConfCount) {
+  const statsEl = document.getElementById('resultStats');
+  if (!statsEl) return;
+  const highConf = results.filter(r => Math.round((r.confidence || 0) * 100) >= 80).length;
+  const midConf = results.filter(r => {
+    const c = Math.round((r.confidence || 0) * 100);
+    return c >= 50 && c < 80;
+  }).length;
+  const manualCount = manuallyEdited.size;
+
+  statsEl.innerHTML = `
+    <div class="cz-stat-item cz-stat-high">
+      <span class="cz-stat-num">${highConf}</span>
+      <span class="cz-stat-label">고신뢰도 (80%+)</span>
+    </div>
+    <div class="cz-stat-item cz-stat-mid">
+      <span class="cz-stat-num">${midConf}</span>
+      <span class="cz-stat-label">중신뢰도 (50~79%)</span>
+    </div>
+    <div class="cz-stat-item cz-stat-low">
+      <span class="cz-stat-num">${lowConfCount}</span>
+      <span class="cz-stat-label">저신뢰도 (~49%)</span>
+    </div>
+    ${manualCount > 0 ? `
+    <div class="cz-stat-item cz-stat-manual">
+      <span class="cz-stat-num">${manualCount}</span>
+      <span class="cz-stat-label">수동 수정</span>
+    </div>` : ''}
+  `;
+}
+
+// 저신뢰도 필터 버튼
+document.getElementById('lowConfFilterBtn').addEventListener('click', () => {
+  showLowConfOnly = !showLowConfOnly;
+  renderResults(lastResults);
+});
+
 downloadBtn.addEventListener('click', () => {
   if (!lastResults.length) return;
-  const aoa = [['강의명', '대분류', '서브카테고리', '신뢰도(%)', '근거', '소개']];
-  lastResults.forEach(r => {
+  const aoa = [['강의명', '대분류', '서브카테고리', '신뢰도(%)', '수동수정', '근거', '소개']];
+  lastResults.forEach((r, i) => {
     aoa.push([
       r.name,
       r.category,
       r.subCategory,
       Math.round((r.confidence || 0) * 100),
+      manuallyEdited.has(i) ? 'Y' : '',
       r.reason || '',
       r.intro || '',
     ]);
   });
   const ws = XLSX.utils.aoa_to_sheet(aoa);
-  ws['!cols'] = [{ wch: 36 }, { wch: 16 }, { wch: 18 }, { wch: 10 }, { wch: 40 }, { wch: 50 }];
+  ws['!cols'] = [{ wch: 36 }, { wch: 16 }, { wch: 18 }, { wch: 10 }, { wch: 10 }, { wch: 40 }, { wch: 50 }];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, '카테고리 분류');
   const filename = `카테고리분류_${new Date().toISOString().slice(0, 10)}.xlsx`;

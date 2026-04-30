@@ -52,8 +52,12 @@
     <div id="results" class="cz-results" style="display:none;">
       <div class="cz-results-head">
         <h3>분류 결과 <span id="resultCount" class="cz-result-count"></span></h3>
-        <button class="btn btn-download-original" id="downloadBtn">엑셀 다운로드</button>
+        <div class="cz-results-actions">
+          <button id="lowConfFilterBtn" class="btn-low-conf">저신뢰도만 보기</button>
+          <button class="btn btn-download-original" id="downloadBtn">엑셀 다운로드</button>
+        </div>
       </div>
+      <div id="resultStats" class="cz-result-stats"></div>
       <div id="resultList" class="cz-result-list"></div>
     </div>
   </main>

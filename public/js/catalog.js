@@ -7,6 +7,9 @@ const FAV_KEY = 'wt-catalog-favorites';
 let favorites = new Set(JSON.parse(localStorage.getItem(FAV_KEY) || '[]'));
 let showFavOnly = false;
 
+// Compare state (max 2)
+let compareItems = [];
+
 function saveFavorites() {
   localStorage.setItem(FAV_KEY, JSON.stringify([...favorites]));
 }
@@ -127,8 +130,21 @@ function applyFilters() {
   else if (sort === 'category') filtered.sort((a, b) => (a.category || '').localeCompare(b.category || '', 'ko'));
 
   if (currentPage > Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))) currentPage = 1;
+  updateResetBtn();
   render();
   syncUrl();
+}
+
+function updateResetBtn() {
+  const btn = document.getElementById('filterResetBtn');
+  if (!btn) return;
+  const q = document.getElementById('searchInput').value;
+  const cat = document.getElementById('filterCategory').value;
+  const sub = document.getElementById('filterSub').value;
+  const level = document.getElementById('filterLevel').value;
+  const sort = document.getElementById('sortBy').value;
+  const hasFilter = q || cat || sub || level || (sort && sort !== 'default') || showFavOnly;
+  btn.style.display = hasFilter ? 'inline-flex' : 'none';
 }
 
 function highlight(text, keyword) {
@@ -161,9 +177,11 @@ function render() {
     const levelClass = getLevelClass(l.level);
     const id = lectureId(l);
     const isFav = favorites.has(id);
+    const isCompare = compareItems.some(c => lectureId(c) === id);
     return `
-      <div class="catalog-card" data-idx="${start + i}">
+      <div class="catalog-card ${isCompare ? 'compare-selected' : ''}" data-idx="${start + i}">
         <button class="fav-btn ${isFav ? 'on' : ''}" data-id="${escapeHtml(id)}" title="즐겨찾기">${isFav ? '★' : '☆'}</button>
+        <button class="compare-btn ${isCompare ? 'on' : ''}" data-idx="${start + i}" title="비교 선택">${isCompare ? '✓ 비교중' : '비교'}</button>
         <div class="catalog-card-top">
           <div class="catalog-card-name">${highlight(l.name, search)}</div>
           ${l.level ? `<span class="catalog-card-level ${levelClass}">${l.level}</span>` : ''}
@@ -189,9 +207,17 @@ function render() {
     });
   });
 
+  list.querySelectorAll('.compare-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const lecture = filtered[Number(btn.dataset.idx)];
+      toggleCompare(lecture);
+    });
+  });
+
   list.querySelectorAll('.catalog-card').forEach(card => {
     card.addEventListener('click', (e) => {
-      if (e.target.closest('.fav-btn')) return;
+      if (e.target.closest('.fav-btn') || e.target.closest('.compare-btn')) return;
       showDetail(Number(card.dataset.idx));
     });
   });
@@ -320,6 +346,122 @@ document.getElementById('exportFavBtn').addEventListener('click', async () => {
   } finally {
     btn.disabled = false;
     btn.textContent = orig;
+  }
+});
+
+// URL 복사
+document.getElementById('shareUrlBtn').addEventListener('click', () => {
+  const url = location.href;
+  const btn = document.getElementById('shareUrlBtn');
+  const orig = btn.textContent;
+  navigator.clipboard.writeText(url).then(() => {
+    btn.textContent = '✓ 복사됨!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 2000);
+  }).catch(() => {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = url;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      btn.textContent = '✓ 복사됨!';
+      setTimeout(() => { btn.textContent = orig; }, 2000);
+    } catch {
+      alert('URL: ' + url);
+    }
+  });
+});
+
+// 필터 초기화
+document.getElementById('filterResetBtn').addEventListener('click', () => {
+  document.getElementById('searchInput').value = '';
+  document.getElementById('filterCategory').value = '';
+  document.getElementById('filterSub').value = '';
+  document.getElementById('filterLevel').value = '';
+  document.getElementById('sortBy').value = 'default';
+  showFavOnly = false;
+  currentPage = 1;
+  updateFavBtn();
+  applyFilters();
+});
+
+// Compare 로직
+function toggleCompare(lecture) {
+  const id = lectureId(lecture);
+  const idx = compareItems.findIndex(c => lectureId(c) === id);
+  if (idx >= 0) {
+    compareItems.splice(idx, 1);
+  } else {
+    if (compareItems.length >= 2) {
+      // Replace the first item with a quick visual feedback
+      compareItems.shift();
+      compareItems.push(lecture);
+    } else {
+      compareItems.push(lecture);
+    }
+  }
+  render();
+  updateCompareBar();
+}
+
+function updateCompareBar() {
+  const bar = document.getElementById('compareBar');
+  const countEl = document.getElementById('compareCount');
+  const doBtn = document.getElementById('doCompareBtn');
+  if (compareItems.length === 0) {
+    bar.style.display = 'none';
+    return;
+  }
+  bar.style.display = 'flex';
+  const names = compareItems.map(l => `"${l.name.slice(0, 12)}${l.name.length > 12 ? '…' : ''}"`).join(', ');
+  countEl.textContent = `${compareItems.length}개 선택: ${names}`;
+  doBtn.disabled = compareItems.length < 2;
+}
+
+function showCompareModal() {
+  if (compareItems.length < 2) return;
+  const modal = document.getElementById('compareModal');
+  const body = document.getElementById('compareBody');
+
+  function buildCol(l) {
+    const levelClass = getLevelClass(l.level);
+    return `
+      <div class="compare-col">
+        <div class="compare-col-name">${escapeHtml(l.name)}</div>
+        <div class="compare-col-tags">
+          ${l.category ? `<span class="tag">${escapeHtml(l.category)}</span>` : ''}
+          ${l.subCategory ? `<span class="tag">${escapeHtml(l.subCategory)}</span>` : ''}
+          ${l.level ? `<span class="catalog-card-level ${levelClass}" style="font-size:11px;padding:2px 8px;">${escapeHtml(l.level)}</span>` : ''}
+        </div>
+        ${l.intro ? `<div class="compare-col-intro">${escapeHtml(l.intro)}</div>` : '<div class="compare-col-intro" style="color:var(--text-muted);">소개 없음</div>'}
+        ${l.url ? `<a class="compare-col-link" href="${escapeHtml(l.url)}" target="_blank">강의 링크 →</a>` : ''}
+      </div>
+    `;
+  }
+
+  body.innerHTML = compareItems.map(buildCol).join('<div class="compare-divider"></div>');
+  modal.style.display = 'flex';
+}
+
+document.getElementById('doCompareBtn').addEventListener('click', showCompareModal);
+
+document.getElementById('clearCompareBtn').addEventListener('click', () => {
+  compareItems = [];
+  updateCompareBar();
+  render();
+});
+
+document.getElementById('compareModalClose').addEventListener('click', () => {
+  document.getElementById('compareModal').style.display = 'none';
+});
+
+document.getElementById('compareModal').addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) {
+    document.getElementById('compareModal').style.display = 'none';
   }
 });
 

@@ -2,6 +2,122 @@
   max-width: 1100px;
 }
 
+/* KPI Cards */
+.kpi-grid {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.kpi-card {
+  flex: 1;
+  min-width: 120px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px 20px;
+  transition: box-shadow 0.15s;
+}
+
+.kpi-card:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+}
+
+.kpi-card--up {
+  border-left: 3px solid #10b981;
+}
+
+.kpi-card--down {
+  border-left: 3px solid #ef4444;
+}
+
+.kpi-label {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #64748b;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.kpi-value {
+  font-size: 26px;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1;
+}
+
+.kpi-unit {
+  font-size: 14px;
+  font-weight: 600;
+  color: #64748b;
+  margin-left: 2px;
+}
+
+.kpi-card--up .kpi-value { color: #047857; }
+.kpi-card--down .kpi-value { color: #b91c1c; }
+
+:root[data-theme="dark"] .kpi-card {
+  background: var(--surface);
+  border-color: var(--border);
+}
+:root[data-theme="dark"] .kpi-label { color: var(--text-muted); }
+:root[data-theme="dark"] .kpi-value { color: var(--text); }
+:root[data-theme="dark"] .kpi-card--up .kpi-value { color: #6ee7b7; }
+:root[data-theme="dark"] .kpi-card--down .kpi-value { color: #fca5a5; }
+
+/* Bar tooltip */
+.bar-tooltip {
+  position: fixed;
+  background: #0f172a;
+  color: #e2e8f0;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 12.5px;
+  line-height: 1.7;
+  z-index: 300;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+  min-width: 130px;
+  white-space: nowrap;
+}
+
+.bt-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #94a3b8;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.bt-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bt-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.bar-group {
+  cursor: default;
+}
+
+.bar-group:hover .bar-total {
+  background: #2563eb;
+}
+
+:root[data-theme="dark"] .bar-tooltip {
+  background: #1e293b;
+  border: 1px solid #334155;
+}
+
 /* View mode tabs */
 .view-mode-tabs {
   display: flex;

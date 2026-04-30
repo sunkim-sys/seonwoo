@@ -15,12 +15,93 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
   flex-wrap: wrap;
   gap: 12px;
 }
 
 .cz-results-head h3 { margin: 0; }
+
+.cz-results-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* 저신뢰도 필터 버튼 */
+.btn-low-conf {
+  padding: 7px 13px;
+  background: #fef3c7;
+  color: #b45309;
+  border: 1px solid #fcd34d;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.btn-low-conf:hover {
+  background: #fde68a;
+  border-color: #f59e0b;
+}
+
+.btn-low-conf.active {
+  background: #f59e0b;
+  color: #fff;
+  border-color: #d97706;
+}
+
+:root[data-theme="dark"] .btn-low-conf {
+  background: rgba(234, 179, 8, 0.12);
+  color: #fde68a;
+  border-color: rgba(234, 179, 8, 0.3);
+}
+
+:root[data-theme="dark"] .btn-low-conf.active {
+  background: rgba(234, 179, 8, 0.3);
+  color: #fef3c7;
+  border-color: rgba(234, 179, 8, 0.5);
+}
+
+/* 통계 바 */
+.cz-result-stats {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.cz-stat-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+
+.cz-stat-high { background: #ecfdf5; color: #047857; border-color: #a7f3d0; }
+.cz-stat-mid { background: #fef3c7; color: #b45309; border-color: #fde68a; }
+.cz-stat-low { background: #fef2f2; color: #b91c1c; border-color: #fecaca; }
+.cz-stat-manual { background: #eef2ff; color: #4f46e5; border-color: #c7d2fe; }
+
+.cz-stat-num {
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.cz-stat-label { font-weight: 500; }
+
+:root[data-theme="dark"] .cz-stat-high { background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.25); color: #6ee7b7; }
+:root[data-theme="dark"] .cz-stat-mid { background: rgba(234,179,8,0.1); border-color: rgba(234,179,8,0.25); color: #fde68a; }
+:root[data-theme="dark"] .cz-stat-low { background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.25); color: #fca5a5; }
+:root[data-theme="dark"] .cz-stat-manual { background: rgba(99,102,241,0.1); border-color: rgba(99,102,241,0.25); color: #a5b4fc; }
 
 .cz-result-count {
   font-size: 13px;
@@ -51,6 +132,42 @@
   align-items: flex-start;
   gap: 12px;
   margin-bottom: 8px;
+}
+
+.cz-badges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+/* 수동 수정 배지 */
+.cz-manual-badge {
+  font-size: 10.5px;
+  font-weight: 700;
+  background: #eef2ff;
+  color: #4f46e5;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid #c7d2fe;
+  white-space: nowrap;
+}
+
+:root[data-theme="dark"] .cz-manual-badge {
+  background: rgba(99,102,241,0.15);
+  color: #a5b4fc;
+  border-color: rgba(99,102,241,0.3);
+}
+
+/* 수동 수정된 카드 강조 */
+.cz-card--edited {
+  border-color: #818cf8;
+  background: rgba(99,102,241,0.02);
+}
+
+:root[data-theme="dark"] .cz-card--edited {
+  border-color: rgba(99,102,241,0.4);
+  background: rgba(99,102,241,0.06);
 }
 
 .cz-name {
@@ -126,15 +243,14 @@
 :root[data-theme="dark"] .cz-reason { background: rgba(99,102,241,0.12); }
 
 .cz-warn-badge {
-  position: absolute;
-  top: 12px;
-  right: 60px;
   font-size: 10.5px;
   font-weight: 700;
   background: #fee2e2;
   color: #b91c1c;
   padding: 2px 8px;
   border-radius: 999px;
+  border: 1px solid #fecaca;
+  white-space: nowrap;
 }
 
 .spinner {
