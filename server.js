@@ -7,6 +7,7 @@ const { handleRecommendRoutes } = require('./routes/recommend');
 const { handleCatalogRoutes } = require('./routes/catalog');
 const { handleReportRoutes } = require('./routes/report');
 const { handleCategorizeRoutes } = require('./routes/categorize');
+const { handleMembersRoutes } = require('./routes/members');
 
 const PORT = process.env.PORT || 3000;
 
@@ -134,6 +135,9 @@ const server = http.createServer(async (req, res) => {
     }
     if (req.url.startsWith('/api/categorize')) {
       return await handleCategorizeRoutes(req, res, { sendJson });
+    }
+    if (req.url.startsWith('/api/members')) {
+      return await handleMembersRoutes(req, res, { sendJson });
     }
 
     // Static files

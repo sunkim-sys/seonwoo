@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: web-tools
+    runtime: node
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: SKILLFLO_EMAIL
+        sync: false
+      - key: SKILLFLO_PASSWORD
+        sync: false

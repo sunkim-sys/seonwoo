@@ -1,0 +1,243 @@
+const { chromium } = require('playwright');
+const XLSX = require('xlsx');
+const fs = require('fs');
+const path = require('path');
+const os = require('os');
+
+function formatPhone(phone) {
+  const digits = String(phone || '').replace(/\D/g, '');
+  if (!digits) return phone;
+  if (digits.length === 11) return `${digits.slice(0,3)}-${digits.slice(3,7)}-${digits.slice(7)}`;
+  if (digits.length === 10 && digits.startsWith('02')) return `${digits.slice(0,2)}-${digits.slice(2,6)}-${digits.slice(6)}`;
+  if (digits.length === 10) return `${digits.slice(0,3)}-${digits.slice(3,6)}-${digits.slice(6)}`;
+  return phone;
+}
+
+function parseCSV(buffer) {
+  const text = buffer.toString('utf-8').replace(/^\uFEFF/, '');
+  return text.split('\n').filter(l => l.trim()).map(line => {
+    const cells = [];
+    let cur = '', inQ = false;
+    for (let i = 0; i < line.length; i++) {
+      if (line[i] === '"') { inQ = !inQ; }
+      else if (line[i] === ',' && !inQ) { cells.push(cur.trim()); cur = ''; }
+      else cur += line[i];
+    }
+    cells.push(cur.trim());
+    return cells;
+  });
+}
+
+async function downloadCompanyMembers(page, company, tmpDir) {
+  // 1. 회사 선택기 위치 찾기
+  const selectorInfo = await page.evaluate(() => {
+    const W = window.innerWidth;
+    for (const el of document.querySelectorAll('*')) {
+      if (el.textContent.trim() !== '관리자') continue;
+      const rect = el.getBoundingClientRect();
+      if (rect.x < W * 0.5 || rect.y > 80 || rect.width === 0) continue;
+      let p = el.parentElement;
+      for (let i = 0; i < 6; i++) {
+        if (p && p.previousElementSibling) {
+          const prev = p.previousElementSibling;
+          const r = prev.getBoundingClientRect();
+          if (r.width > 30 && r.x > W * 0.4 && r.y < 80) {
+            return { x: r.x + r.width / 2, y: r.y + r.height / 2 };
+          }
+        }
+        p = p ? p.parentElement : null;
+      }
+    }
+    return null;
+  });
+  if (!selectorInfo) throw new Error('회사 선택기 없음');
+
+  await page.mouse.click(selectorInfo.x, selectorInfo.y);
+  await page.waitForTimeout(800);
+
+  // 2. 팝업 input (우측 상단) 찾아 클릭
+  const popupInput = await page.evaluate(() => {
+    const W = window.innerWidth;
+    const inp = Array.from(document.querySelectorAll('input')).find(el => {
+      const r = el.getBoundingClientRect();
+      return r.width > 0 && r.x > W * 0.4 && r.y < 100;
+    });
+    if (inp) {
+      inp.focus();
+      const r = inp.getBoundingClientRect();
+      return { x: Math.round(r.x + r.width / 2), y: Math.round(r.y + r.height / 2) };
+    }
+    return null;
+  });
+  if (!popupInput) throw new Error('검색 input 없음');
+
+  await page.mouse.click(popupInput.x, popupInput.y);
+  await page.waitForTimeout(300);
+
+  // 3. 검색어 입력
+  const keyword = company.split('/')[0];
+  await page.keyboard.press('Control+a');
+  await page.keyboard.press('Delete');
+  await page.keyboard.type(keyword, { delay: 100 });
+  await page.waitForTimeout(1500);
+
+  // 4. 드롭다운에서 정확히 일치하는 항목 클릭
+  const clicked = await page.evaluate((company) => {
+    const W = window.innerWidth;
+    let exact = null, partial = null;
+    for (const el of document.querySelectorAll('*')) {
+      if (el.children.length > 0) continue;
+      const text = el.textContent.trim();
+      const r = el.getBoundingClientRect();
+      if (r.width === 0 || r.height === 0 || r.x < W * 0.4 || r.y > 300) continue;
+      if (text === company && !exact) exact = el;
+      if (!partial && text.includes(company.split('/')[0])) partial = el;
+    }
+    const hit = exact || partial;
+    if (!hit) return 'not_found';
+    hit.click();
+    return (exact ? 'exact' : 'partial') + ':' + hit.textContent.trim().slice(0, 20);
+  }, company);
+
+  if (clicked === 'not_found') await page.keyboard.press('Enter');
+
+  await page.waitForLoadState('networkidle');
+  await page.waitForTimeout(2000);
+
+  // 5. 구성원 관리 href 가져와서 이동
+  const href = await page.evaluate(() => {
+    const a = Array.from(document.querySelectorAll('a')).find(a => a.textContent.trim() === '구성원 관리');
+    return a ? a.href : null;
+  });
+  if (href) await page.goto(href);
+  else await page.locator('a').filter({ hasText: '구성원 관리' }).first().click({ timeout: 5000 });
+
+  await page.waitForLoadState('networkidle');
+  await page.waitForTimeout(1500);
+
+  // 6. 엑셀 다운로드
+  let dlEl = null;
+  for (const text of ['엑셀로 내려받기', '엑셀 내려받기', '엑셀 다운로드']) {
+    const el = page.getByText(text, { exact: true }).first();
+    if (await el.count() > 0 && await el.isVisible()) { dlEl = el; break; }
+  }
+  if (!dlEl) dlEl = page.locator('a, button').filter({ hasText: '엑셀' }).first();
+  if (!dlEl || await dlEl.count() === 0) throw new Error('엑셀 버튼 없음');
+
+  const [download] = await Promise.all([
+    page.waitForEvent('download', { timeout: 30000 }),
+    dlEl.click(),
+  ]);
+
+  const safe = company.replace(/[/\\:*?"<>|]/g, '_');
+  const ext = path.extname(download.suggestedFilename()) || '.csv';
+  const filePath = path.join(tmpDir, `${safe}_구성원${ext}`);
+  await download.saveAs(filePath);
+  return filePath;
+}
+
+function buildMergedExcel(results, tmpDir) {
+  const allRows = [];
+  let headers = null;
+  let phoneIdx = -1;
+
+  for (const r of results) {
+    if (!r.success || !r.filePath || !fs.existsSync(r.filePath)) continue;
+    try {
+      const rows = parseCSV(fs.readFileSync(r.filePath));
+      if (rows.length === 0) continue;
+      if (!headers) {
+        headers = rows[0];
+        phoneIdx = headers.findIndex(h => h.includes('연락처') || h.includes('전화'));
+        allRows.push(['기업명', ...headers]);
+      }
+      for (const row of rows.slice(1)) {
+        const newRow = [r.company, ...row];
+        if (phoneIdx >= 0 && phoneIdx + 1 < newRow.length) {
+          newRow[phoneIdx + 1] = formatPhone(newRow[phoneIdx + 1]);
+        }
+        allRows.push(newRow);
+      }
+    } catch (e) { console.error('merge err:', e.message); }
+  }
+
+  const ws = XLSX.utils.aoa_to_sheet(allRows);
+  // 열 너비
+  if (allRows[0]) {
+    ws['!cols'] = allRows[0].map((_, i) => {
+      const maxLen = allRows.reduce((m, r) => Math.max(m, String(r[i] || '').length), 0);
+      return { wch: Math.min(maxLen + 2, 40) };
+    });
+  }
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '구성원 전체');
+  const outPath = path.join(tmpDir, '구성원_전체.xlsx');
+  XLSX.writeFile(wb, outPath);
+  return outPath;
+}
+
+async function runMembersDownload(companies, credentials, onProgress) {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'members-'));
+
+  const browser = await chromium.launch({
+    headless: true,
+    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+  });
+
+  try {
+    const context = await browser.newContext({ acceptDownloads: true });
+    const page = await context.newPage();
+
+    // 로그인
+    onProgress('로그인 중...');
+    await page.goto('https://partner.skillflo.io');
+    await page.waitForLoadState('networkidle');
+
+    // 로그인 폼 작성
+    const emailSel = 'input[type="email"], input[name="email"], input[placeholder*="이메일"], input[placeholder*="아이디"]';
+    const pwSel = 'input[type="password"]';
+    await page.locator(emailSel).first().fill(credentials.email);
+    await page.locator(pwSel).first().fill(credentials.password);
+    await page.keyboard.press('Enter');
+
+    // 로그인 완료 대기
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(2000);
+
+    const url = page.url();
+    if (url.includes('login') || url.includes('signin')) {
+      throw new Error('로그인 실패 — 이메일/비밀번호를 확인하세요.');
+    }
+    onProgress('로그인 완료!');
+
+    // 구성원 관리 페이지
+    await page.goto('https://partner.skillflo.io/members');
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(1500);
+
+    const results = [];
+    for (let i = 0; i < companies.length; i++) {
+      const company = companies[i];
+      onProgress(`[${i + 1}/${companies.length}] ${company} 처리 중...`);
+      try {
+        const filePath = await downloadCompanyMembers(page, company, tmpDir);
+        results.push({ company, filePath, success: true });
+        onProgress(`[${i + 1}/${companies.length}] ${company} ✓`);
+      } catch (err) {
+        results.push({ company, success: false, error: err.message });
+        onProgress(`[${i + 1}/${companies.length}] ${company} ✗ ${err.message}`);
+      }
+    }
+
+    // 통합 파일
+    onProgress('통합 Excel 파일 생성 중...');
+    const mergedPath = buildMergedExcel(results, tmpDir);
+    onProgress('완료!');
+
+    return { results, mergedPath, tmpDir };
+  } finally {
+    await browser.close();
+  }
+}
+
+module.exports = { runMembersDownload };
