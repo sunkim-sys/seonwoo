@@ -2,7 +2,7 @@ services:
   - type: web
     name: web-tools
     runtime: node
-    buildCommand: npm install
+    buildCommand: npm install && npx playwright install --with-deps chromium
     startCommand: npm start
     envVars:
       - key: NODE_ENV
