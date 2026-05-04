@@ -234,60 +234,23 @@ async function runMembersDownload(companies, credentials, onProgress) {
     await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(2000);
 
-    // 페이지 내 input 현황 디버깅
-    const inputInfo = await page.evaluate(() =>
-      Array.from(document.querySelectorAll('input')).map(el => ({
-        type: el.type, name: el.name, id: el.id,
-        placeholder: el.placeholder, visible: el.offsetWidth > 0,
-      }))
-    );
-    onProgress(`입력 필드: ${JSON.stringify(inputInfo)}`);
+    // 이메일 입력 (placeholder로 정확히 지정, fill()로 React state 업데이트)
+    const emailInput = page.locator('input[placeholder*="이메일"]').first();
+    await emailInput.waitFor({ state: 'visible', timeout: 10000 });
+    await emailInput.fill(credentials.email);
+    await page.waitForTimeout(300);
 
-    // React 네이티브 이벤트로 이메일/비밀번호 설정
-    const fillResult = await page.evaluate(([email, pw]) => {
-      const nativeSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
-      const inputs = Array.from(document.querySelectorAll('input'));
+    // 비밀번호 입력
+    const pwInput = page.locator('input[type="password"]').first();
+    await pwInput.fill(credentials.password);
+    await page.waitForTimeout(300);
 
-      const emailEl = inputs.find(el =>
-        el.type === 'email' || el.type === 'text' ||
-        (el.placeholder || '').includes('이메일') ||
-        (el.placeholder || '').includes('아이디') ||
-        (el.name || '').toLowerCase().includes('email') ||
-        (el.id || '').toLowerCase().includes('email')
-      );
-      const pwEl = inputs.find(el => el.type === 'password');
-
-      const setVal = (el, val) => {
-        if (!el) return false;
-        el.focus();
-        nativeSetter.call(el, val);
-        el.dispatchEvent(new Event('input', { bubbles: true }));
-        el.dispatchEvent(new Event('change', { bubbles: true }));
-        el.blur();
-        return true;
-      };
-
-      return {
-        email: setVal(emailEl, email) ? 'ok' : 'not_found',
-        pw: setVal(pwEl, pw) ? 'ok' : 'not_found',
-      };
-    }, [credentials.email, credentials.password]);
-    onProgress(`입력 결과: 이메일=${fillResult.email}, 비밀번호=${fillResult.pw}`);
-    await page.waitForTimeout(500);
-
-    // 로그인 버튼 클릭
-    const btnInfo = await page.evaluate(() =>
-      Array.from(document.querySelectorAll('button')).map(b => ({
-        text: b.textContent.trim().slice(0, 20), type: b.type, visible: b.offsetWidth > 0,
-      }))
-    );
-    onProgress(`버튼: ${JSON.stringify(btnInfo)}`);
-
-    const loginBtn = page.locator('button[type="submit"], button').filter({ hasText: /로그인|signin|login/i }).first();
+    // "로그인하기" 버튼 클릭
+    const loginBtn = page.locator('button').filter({ hasText: '로그인하기' }).first();
     if (await loginBtn.count() > 0) {
       await loginBtn.click();
     } else {
-      await page.locator('input[type="password"]').first().press('Enter');
+      await pwInput.press('Enter');
     }
 
     // URL 변경 대기 (최대 15초)
