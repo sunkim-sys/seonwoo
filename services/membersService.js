@@ -246,6 +246,11 @@ async function runMembersDownload(companies, credentials, onProgress) {
     await pwInput.pressSequentially(credentials.password, { delay: 60 });
     await page.waitForTimeout(300);
 
+    // 입력값 실제 확인
+    const emailVal = await emailInput.inputValue();
+    const pwVal = await pwInput.inputValue();
+    onProgress(`입력 확인: 이메일=${emailVal ? emailVal.slice(0, 4) + '...' : '비어있음'}, PW=${pwVal ? '입력됨' : '비어있음'}`);
+
     onProgress('로그인 중... (버튼 클릭)');
     const loginBtn = page.locator('button').filter({ hasText: '로그인하기' }).first();
     if (await loginBtn.count() > 0) {
@@ -264,7 +269,13 @@ async function runMembersDownload(companies, credentials, onProgress) {
     const url = page.url();
     onProgress(`현재 URL: ${url}`);
     if (url.includes('login') || url.includes('signin')) {
-      throw new Error('로그인 실패 — 이메일/비밀번호를 확인하세요.');
+      // 페이지에 표시된 에러 메시지 수집
+      const pageMsg = await page.evaluate(() => {
+        const errEls = document.querySelectorAll('[class*="error"], [class*="Error"], [class*="alert"], [role="alert"]');
+        const msgs = Array.from(errEls).map(el => el.textContent.trim()).filter(t => t).join(' | ');
+        return msgs || document.body.innerText.slice(0, 200);
+      });
+      throw new Error(`로그인 실패 (페이지: ${pageMsg.slice(0, 100)})`);
     }
     onProgress('로그인 완료!');
 
