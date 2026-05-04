@@ -1,9 +1,12 @@
 const runBtn = document.getElementById('runBtn');
+const retryBtn = document.getElementById('retryBtn');
 const companiesInput = document.getElementById('companiesInput');
 const progressBox = document.getElementById('progressBox');
 const logArea = document.getElementById('logArea');
 const downloadBox = document.getElementById('downloadBox');
 const dlList = document.getElementById('dlList');
+
+let lastCompanies = null;
 
 function appendLog(msg) {
   const line = document.createElement('div');
@@ -34,19 +37,11 @@ function makeDownloadLink(jobId, filename, label, isMerged) {
   return item;
 }
 
-runBtn.addEventListener('click', async () => {
-  const companies = companiesInput.value
-    .split('\n')
-    .map(s => s.trim())
-    .filter(Boolean);
-
-  if (companies.length === 0) {
-    alert('기업명을 입력하세요.');
-    return;
-  }
-
+async function runDownload(companies) {
+  lastCompanies = companies;
   runBtn.disabled = true;
   runBtn.textContent = '실행 중...';
+  retryBtn.style.display = 'none';
   logArea.innerHTML = '';
   dlList.innerHTML = '';
   progressBox.style.display = 'block';
@@ -92,12 +87,10 @@ runBtn.addEventListener('click', async () => {
           appendLog(`완료 — 성공 ${payload.successCount}건 / 실패 ${payload.failCount}건`);
           downloadBox.style.display = 'block';
 
-          // Individual files
           for (const f of (payload.files || [])) {
             dlList.appendChild(makeDownloadLink(payload.jobId, f.filename, f.company, false));
           }
 
-          // Merged file
           if (payload.merged) {
             dlList.appendChild(makeDownloadLink(payload.jobId, payload.merged, '통합 파일 (전체)', true));
           }
@@ -111,5 +104,22 @@ runBtn.addEventListener('click', async () => {
   } finally {
     runBtn.disabled = false;
     runBtn.textContent = '다운로드 시작';
+    retryBtn.style.display = 'block';
   }
+}
+
+runBtn.addEventListener('click', () => {
+  const companies = companiesInput.value
+    .split('\n')
+    .map(s => s.trim())
+    .filter(Boolean);
+  if (companies.length === 0) {
+    alert('기업명을 입력하세요.');
+    return;
+  }
+  runDownload(companies);
+});
+
+retryBtn.addEventListener('click', () => {
+  if (lastCompanies && lastCompanies.length > 0) runDownload(lastCompanies);
 });

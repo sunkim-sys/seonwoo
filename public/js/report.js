@@ -441,6 +441,31 @@ document.getElementById('exportReportBtn').addEventListener('click', async () =>
   }
 });
 
+document.getElementById('exportExcelBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('exportExcelBtn');
+  btn.disabled = true;
+  btn.textContent = '생성 중...';
+  try {
+    const res = await fetch('/api/report/export');
+    if (!res.ok) throw new Error('서버 오류');
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    let suffix = '전체';
+    if (viewMode === 'month' && selectedMonth) suffix = shortLabel(selectedMonth);
+    else if (viewMode === 'range' && rangeStart && rangeEnd) suffix = `${shortLabel(rangeStart)}_${shortLabel(rangeEnd)}`;
+    a.download = `콘텐츠현황_${suffix}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+    a.href = url;
+    a.click();
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    alert('Excel 저장 실패: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Excel 저장';
+  }
+});
+
 function renderHBarChart(containerId, items) {
   const container = document.getElementById(containerId);
   const maxVal = Math.max(...items.map(i => i.value), 1);

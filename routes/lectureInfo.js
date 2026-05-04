@@ -2,6 +2,9 @@ const XLSX = require('xlsx');
 const { summarizeLecture } = require('../services/aiService');
 const { findLectures } = require('../services/sheetService');
 
+const lectureCache = new Map();
+const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
+
 function parseTSV(text) {
   // Parse entire text respecting quoted fields (which may contain newlines)
   const rows = [];
@@ -132,9 +135,14 @@ async function handleLectureInfoRoutes(req, res, { parseMultipart, sendJson }) {
   }
 
   async function summarizeOne(lecture) {
+    const cached = lectureCache.get(lecture.name);
+    if (cached && Date.now() - cached.ts < CACHE_TTL) {
+      console.log(`[Cache HIT] ${lecture.name}`);
+      return cached.result;
+    }
     try {
       const summary = await summarizeLecture(lecture);
-      return {
+      const result = {
         name: lecture.name,
         info: summary.info,
         point1: summary.point1,
@@ -142,6 +150,8 @@ async function handleLectureInfoRoutes(req, res, { parseMultipart, sendJson }) {
         point3: summary.point3,
         url: lecture.url,
       };
+      lectureCache.set(lecture.name, { result, ts: Date.now() });
+      return result;
     } catch (err) {
       console.log(`[Fallback] ${lecture.name}: ${err.message}`);
       const goals = (lecture.goals || '').split(/\d+\.\s*/).filter(g => g.trim());
