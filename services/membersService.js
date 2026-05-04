@@ -138,8 +138,7 @@ async function downloadCompanyMembers(page, company, tmpDir) {
 
   if (clicked === 'not_found') await page.keyboard.press('Enter');
 
-  await page.waitForLoadState('load');
-  await page.waitForTimeout(2000);
+  await page.waitForTimeout(2500);
 
   // 5. 구성원 관리 href 가져와서 이동
   const href = await page.evaluate(() => {
@@ -149,8 +148,7 @@ async function downloadCompanyMembers(page, company, tmpDir) {
   if (href) await page.goto(href, { waitUntil: 'domcontentloaded', timeout: 30000 });
   else await page.locator('a').filter({ hasText: '구성원 관리' }).first().click({ timeout: 5000 });
 
-  await page.waitForLoadState('load');
-  await page.waitForTimeout(1500);
+  await page.waitForTimeout(2500);
 
   // 6. 엑셀 다운로드 버튼 탐색 (텍스트 여러 패턴 시도)
   let dlEl = null;
