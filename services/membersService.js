@@ -254,7 +254,12 @@ async function runMembersDownload(companies, credentials, onProgress) {
       await pwInput.press('Enter');
     }
 
-    await page.waitForTimeout(5000);
+    onProgress('로그인 중... (이동 대기)');
+    // 페이지 이동을 waitForURL로 감지 (최대 15초), 실패해도 계속
+    try {
+      await page.waitForURL(u => !u.includes('signin') && !u.includes('login'), { timeout: 15000 });
+    } catch (_) {}
+    await page.waitForTimeout(1500);
 
     const url = page.url();
     onProgress(`현재 URL: ${url}`);
@@ -267,6 +272,7 @@ async function runMembersDownload(companies, credentials, onProgress) {
     await page.setViewportSize({ width: 1920, height: 1080 });
 
     // 구성원 관리 페이지
+    onProgress('구성원 페이지 이동 중...');
     await page.goto('https://partner.skillflo.io/members', { waitUntil: 'domcontentloaded', timeout: 30000 });
     await page.waitForTimeout(3000);
 
