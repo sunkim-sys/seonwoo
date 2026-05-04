@@ -152,13 +152,18 @@ async function downloadCompanyMembers(page, company, tmpDir) {
   await page.waitForLoadState('load');
   await page.waitForTimeout(1500);
 
-  // 6. 엑셀 다운로드
+  // 6. 엑셀 다운로드 버튼 탐색 (텍스트 여러 패턴 시도)
   let dlEl = null;
-  for (const text of ['엑셀로 내려받기', '엑셀 내려받기', '엑셀 다운로드']) {
+  const excelTexts = ['엑셀로 내려받기', '엑셀 내려받기', '엑셀 다운로드', '엑셀로 받기', 'Excel 다운로드'];
+  for (const text of excelTexts) {
     const el = page.getByText(text, { exact: true }).first();
     if (await el.count() > 0 && await el.isVisible()) { dlEl = el; break; }
   }
-  if (!dlEl) dlEl = page.locator('a, button').filter({ hasText: '엑셀' }).first();
+  // 텍스트 부분 일치 폴백
+  if (!dlEl) {
+    const candidates = page.locator('a, button').filter({ hasText: /엑셀|Excel|xlsx/i });
+    if (await candidates.count() > 0) dlEl = candidates.first();
+  }
   if (!dlEl || await dlEl.count() === 0) throw new Error('엑셀 버튼 없음');
 
   const [download] = await Promise.all([
@@ -272,6 +277,11 @@ async function runMembersDownload(companies, credentials, onProgress) {
     for (let i = 0; i < companies.length; i++) {
       const company = companies[i];
       onProgress(`[${i + 1}/${companies.length}] ${company} 처리 중...`);
+
+      // 매 회사마다 /members로 복귀 — 이전 회사 처리 후 페이지가 바뀌어도 선택기가 있는 상태에서 시작
+      await page.goto('https://partner.skillflo.io/members', { waitUntil: 'load', timeout: 30000 });
+      await page.waitForTimeout(2000);
+
       try {
         const filePath = await downloadCompanyMembers(page, company, tmpDir);
         results.push({ company, filePath, success: true });
