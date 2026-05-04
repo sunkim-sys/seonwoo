@@ -146,7 +146,7 @@ async function downloadCompanyMembers(page, company, tmpDir) {
     const a = Array.from(document.querySelectorAll('a')).find(a => a.textContent.trim() === '구성원 관리');
     return a ? a.href : null;
   });
-  if (href) await page.goto(href);
+  if (href) await page.goto(href, { waitUntil: 'domcontentloaded', timeout: 30000 });
   else await page.locator('a').filter({ hasText: '구성원 관리' }).first().click({ timeout: 5000 });
 
   await page.waitForLoadState('load');
@@ -232,24 +232,23 @@ async function runMembersDownload(companies, credentials, onProgress) {
     const page = await context.newPage();
 
     // 로그인
-    onProgress('로그인 중...');
-    await page.goto('https://partner.skillflo.io', { waitUntil: 'load', timeout: 30000 });
-    await page.waitForTimeout(1500);
+    onProgress('로그인 중... (페이지 이동)');
+    await page.goto('https://partner.skillflo.io', { waitUntil: 'domcontentloaded', timeout: 30000 });
 
+    onProgress('로그인 중... (입력 대기)');
     const emailInput = page.locator('input[placeholder*="이메일"]').first();
     const pwInput = page.locator('input[type="password"]').first();
+    await emailInput.waitFor({ state: 'visible', timeout: 15000 });
 
-    await emailInput.waitFor({ state: 'visible', timeout: 10000 });
-
-    // pressSequentially: 로케이터에 직접 스코프된 키입력 — 포커스 엇갈림 없음
+    onProgress('로그인 중... (입력)');
     await emailInput.click();
-    await emailInput.pressSequentially(credentials.email, { delay: 80 });
-    await page.waitForTimeout(400);
+    await emailInput.pressSequentially(credentials.email, { delay: 60 });
+    await page.waitForTimeout(300);
     await pwInput.click();
-    await pwInput.pressSequentially(credentials.password, { delay: 80 });
-    await page.waitForTimeout(400);
+    await pwInput.pressSequentially(credentials.password, { delay: 60 });
+    await page.waitForTimeout(300);
 
-    // "로그인하기" 버튼 클릭, 없으면 Enter
+    onProgress('로그인 중... (버튼 클릭)');
     const loginBtn = page.locator('button').filter({ hasText: '로그인하기' }).first();
     if (await loginBtn.count() > 0) {
       await loginBtn.click();
@@ -270,7 +269,7 @@ async function runMembersDownload(companies, credentials, onProgress) {
     await page.setViewportSize({ width: 1920, height: 1080 });
 
     // 구성원 관리 페이지
-    await page.goto('https://partner.skillflo.io/members', { waitUntil: 'load', timeout: 30000 });
+    await page.goto('https://partner.skillflo.io/members', { waitUntil: 'domcontentloaded', timeout: 30000 });
     await page.waitForTimeout(3000);
 
     const results = [];
@@ -279,7 +278,7 @@ async function runMembersDownload(companies, credentials, onProgress) {
       onProgress(`[${i + 1}/${companies.length}] ${company} 처리 중...`);
 
       // 매 회사마다 /members로 복귀 — 이전 회사 처리 후 페이지가 바뀌어도 선택기가 있는 상태에서 시작
-      await page.goto('https://partner.skillflo.io/members', { waitUntil: 'load', timeout: 30000 });
+      await page.goto('https://partner.skillflo.io/members', { waitUntil: 'domcontentloaded', timeout: 30000 });
       await page.waitForTimeout(2000);
 
       try {
