@@ -79,14 +79,25 @@ async function downloadCompanyMembers(page, company, tmpDir) {
   if (!selectorInfo) throw new Error('회사 선택기 없음');
 
   await page.mouse.click(selectorInfo.x, selectorInfo.y);
-  await page.waitForTimeout(800);
 
-  // 2. 팝업 input (우측 상단) 찾아 클릭
+  // 드롭다운 검색 input이 나타날 때까지 대기 (최대 4초)
+  try {
+    await page.waitForFunction(() => {
+      return Array.from(document.querySelectorAll('input')).some(el => {
+        const r = el.getBoundingClientRect();
+        return r.width > 0 && r.height > 0 && r.y < 200;
+      });
+    }, { timeout: 4000 });
+  } catch (_) {
+    await page.waitForTimeout(1000);
+  }
+
+  // 2. 팝업 input 찾아 클릭 (y 조건 완화: 100 → 200)
   const popupInput = await page.evaluate(() => {
     const W = window.innerWidth;
     const inp = Array.from(document.querySelectorAll('input')).find(el => {
       const r = el.getBoundingClientRect();
-      return r.width > 0 && r.x > W * 0.4 && r.y < 100;
+      return r.width > 0 && r.height > 0 && r.x > W * 0.3 && r.y < 200;
     });
     if (inp) {
       inp.focus();
