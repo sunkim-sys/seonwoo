@@ -231,24 +231,28 @@ async function runMembersDownload(companies, credentials, onProgress) {
     await page.goto('https://partner.skillflo.io', { waitUntil: 'load', timeout: 30000 });
     await page.waitForTimeout(1500);
 
-    const emailSel = 'input[type="email"], input[name="email"], input[placeholder*="이메일"], input[placeholder*="아이디"]';
-    const emailInput = page.locator(emailSel).first();
+    const emailInput = page.locator('input[placeholder*="이메일"]').first();
     const pwInput = page.locator('input[type="password"]').first();
 
     await emailInput.waitFor({ state: 'visible', timeout: 10000 });
-    await emailInput.click();
-    await page.keyboard.type(credentials.email, { delay: 80 });
-    await pwInput.click();
-    await page.keyboard.type(credentials.password, { delay: 80 });
 
-    const loginBtn = page.locator('button[type="submit"], button').filter({ hasText: /로그인|signin|login/i }).first();
+    // pressSequentially: 로케이터에 직접 스코프된 키입력 — 포커스 엇갈림 없음
+    await emailInput.click();
+    await emailInput.pressSequentially(credentials.email, { delay: 80 });
+    await page.waitForTimeout(400);
+    await pwInput.click();
+    await pwInput.pressSequentially(credentials.password, { delay: 80 });
+    await page.waitForTimeout(400);
+
+    // "로그인하기" 버튼 클릭, 없으면 Enter
+    const loginBtn = page.locator('button').filter({ hasText: '로그인하기' }).first();
     if (await loginBtn.count() > 0) {
       await loginBtn.click();
     } else {
-      await page.keyboard.press('Enter');
+      await pwInput.press('Enter');
     }
 
-    await page.waitForTimeout(4000);
+    await page.waitForTimeout(5000);
 
     const url = page.url();
     onProgress(`현재 URL: ${url}`);
