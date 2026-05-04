@@ -207,50 +207,93 @@ async function runMembersDownload(companies, credentials, onProgress) {
 
   const browser = await chromium.launch({
     headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-blink-features=AutomationControlled',
+    ],
   });
 
   try {
     const context = await browser.newContext({
       acceptDownloads: true,
       viewport: { width: 1920, height: 1080 },
+      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
     });
     const page = await context.newPage();
 
-    // 로그인 — 로그인 페이지로 직접 이동
+    // webdriver 감지 우회
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+    });
+
+    // 로그인
     onProgress('로그인 중...');
     await page.goto('https://partner.skillflo.io/auth/signin');
     await page.waitForLoadState('domcontentloaded');
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(2000);
 
-    // 이메일 입력 필드가 실제로 렌더링될 때까지 대기
-    const emailSel = 'input[type="email"], input[name="email"], input[placeholder*="이메일"], input[placeholder*="아이디"]';
-    const emailInput = page.locator(emailSel).first();
-    await emailInput.waitFor({ state: 'visible', timeout: 10000 });
+    // 페이지 내 input 현황 디버깅
+    const inputInfo = await page.evaluate(() =>
+      Array.from(document.querySelectorAll('input')).map(el => ({
+        type: el.type, name: el.name, id: el.id,
+        placeholder: el.placeholder, visible: el.offsetWidth > 0,
+      }))
+    );
+    onProgress(`입력 필드: ${JSON.stringify(inputInfo)}`);
 
-    // 이메일 입력
-    await emailInput.click({ clickCount: 3 });
-    await page.keyboard.type(credentials.email, { delay: 60 });
-    await page.waitForTimeout(200);
+    // React 네이티브 이벤트로 이메일/비밀번호 설정
+    const fillResult = await page.evaluate(([email, pw]) => {
+      const nativeSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+      const inputs = Array.from(document.querySelectorAll('input'));
 
-    // 비밀번호 입력
-    const pwInput = page.locator('input[type="password"]').first();
-    await pwInput.click({ clickCount: 3 });
-    await page.keyboard.type(credentials.password, { delay: 60 });
-    await page.waitForTimeout(300);
+      const emailEl = inputs.find(el =>
+        el.type === 'email' || el.type === 'text' ||
+        (el.placeholder || '').includes('이메일') ||
+        (el.placeholder || '').includes('아이디') ||
+        (el.name || '').toLowerCase().includes('email') ||
+        (el.id || '').toLowerCase().includes('email')
+      );
+      const pwEl = inputs.find(el => el.type === 'password');
 
-    // 로그인 버튼 클릭 (없으면 Enter)
+      const setVal = (el, val) => {
+        if (!el) return false;
+        el.focus();
+        nativeSetter.call(el, val);
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+        el.blur();
+        return true;
+      };
+
+      return {
+        email: setVal(emailEl, email) ? 'ok' : 'not_found',
+        pw: setVal(pwEl, pw) ? 'ok' : 'not_found',
+      };
+    }, [credentials.email, credentials.password]);
+    onProgress(`입력 결과: 이메일=${fillResult.email}, 비밀번호=${fillResult.pw}`);
+    await page.waitForTimeout(500);
+
+    // 로그인 버튼 클릭
+    const btnInfo = await page.evaluate(() =>
+      Array.from(document.querySelectorAll('button')).map(b => ({
+        text: b.textContent.trim().slice(0, 20), type: b.type, visible: b.offsetWidth > 0,
+      }))
+    );
+    onProgress(`버튼: ${JSON.stringify(btnInfo)}`);
+
     const loginBtn = page.locator('button[type="submit"], button').filter({ hasText: /로그인|signin|login/i }).first();
     if (await loginBtn.count() > 0) {
       await loginBtn.click();
     } else {
-      await pwInput.press('Enter');
+      await page.locator('input[type="password"]').first().press('Enter');
     }
 
-    // URL이 signin에서 벗어날 때까지 대기 (최대 15초)
+    // URL 변경 대기 (최대 15초)
     try {
       await page.waitForURL(url => !url.includes('signin') && !url.includes('login'), { timeout: 15000 });
-    } catch (_) { /* 타임아웃 시 아래에서 URL 재확인 */ }
+    } catch (_) {}
     await page.waitForTimeout(2000);
 
     const url = page.url();
