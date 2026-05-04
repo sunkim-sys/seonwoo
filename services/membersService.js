@@ -207,57 +207,38 @@ async function runMembersDownload(companies, credentials, onProgress) {
 
   const browser = await chromium.launch({
     headless: true,
-    args: [
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--disable-dev-shm-usage',
-      '--disable-blink-features=AutomationControlled',
-    ],
+    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
   });
 
   try {
-    const context = await browser.newContext({
-      acceptDownloads: true,
-      viewport: { width: 1920, height: 1080 },
-      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-    });
+    // 로그인은 기본 viewport(1280×720)로 — 큰 viewport에서 로그인 폼이 오작동함
+    const context = await browser.newContext({ acceptDownloads: true });
     const page = await context.newPage();
 
-    // webdriver 감지 우회
-    await page.addInitScript(() => {
-      Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
-    });
-
-    // 로그인
+    // 로그인 (c17c45a에서 동작 확인된 방식 그대로)
     onProgress('로그인 중...');
-    await page.goto('https://partner.skillflo.io/auth/signin');
-    await page.waitForLoadState('domcontentloaded');
-    await page.waitForTimeout(2000);
+    await page.goto('https://partner.skillflo.io');
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(1000);
 
-    // 이메일 입력 (placeholder로 정확히 지정, fill()로 React state 업데이트)
-    const emailInput = page.locator('input[placeholder*="이메일"]').first();
-    await emailInput.waitFor({ state: 'visible', timeout: 10000 });
-    await emailInput.fill(credentials.email);
-    await page.waitForTimeout(300);
-
-    // 비밀번호 입력
+    const emailSel = 'input[type="email"], input[name="email"], input[placeholder*="이메일"], input[placeholder*="아이디"]';
+    const emailInput = page.locator(emailSel).first();
     const pwInput = page.locator('input[type="password"]').first();
-    await pwInput.fill(credentials.password);
-    await page.waitForTimeout(300);
 
-    // "로그인하기" 버튼 클릭
-    const loginBtn = page.locator('button').filter({ hasText: '로그인하기' }).first();
+    await emailInput.click();
+    await page.keyboard.type(credentials.email, { delay: 80 });
+    await pwInput.click();
+    await page.keyboard.type(credentials.password, { delay: 80 });
+
+    const loginBtn = page.locator('button[type="submit"], button').filter({ hasText: /로그인|signin|login/i }).first();
     if (await loginBtn.count() > 0) {
       await loginBtn.click();
     } else {
-      await pwInput.press('Enter');
+      await page.keyboard.press('Enter');
     }
 
-    // URL 변경 대기 (최대 15초)
-    try {
-      await page.waitForURL(url => !url.includes('signin') && !url.includes('login'), { timeout: 15000 });
-    } catch (_) {}
-    await page.waitForTimeout(2000);
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(3000);
 
     const url = page.url();
     onProgress(`현재 URL: ${url}`);
@@ -265,6 +246,9 @@ async function runMembersDownload(companies, credentials, onProgress) {
       throw new Error('로그인 실패 — 이메일/비밀번호를 확인하세요.');
     }
     onProgress('로그인 완료!');
+
+    // 로그인 후 viewport를 1920×1080으로 확장 (회사 선택기 탐색에 필요)
+    await page.setViewportSize({ width: 1920, height: 1080 });
 
     // 구성원 관리 페이지
     await page.goto('https://partner.skillflo.io/members');
