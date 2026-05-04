@@ -127,7 +127,7 @@ async function downloadCompanyMembers(page, company, tmpDir) {
 
   if (clicked === 'not_found') await page.keyboard.press('Enter');
 
-  await page.waitForLoadState('networkidle');
+  await page.waitForLoadState('load');
   await page.waitForTimeout(2000);
 
   // 5. 구성원 관리 href 가져와서 이동
@@ -138,7 +138,7 @@ async function downloadCompanyMembers(page, company, tmpDir) {
   if (href) await page.goto(href);
   else await page.locator('a').filter({ hasText: '구성원 관리' }).first().click({ timeout: 5000 });
 
-  await page.waitForLoadState('networkidle');
+  await page.waitForLoadState('load');
   await page.waitForTimeout(1500);
 
   // 6. 엑셀 다운로드
@@ -215,16 +215,16 @@ async function runMembersDownload(companies, credentials, onProgress) {
     const context = await browser.newContext({ acceptDownloads: true });
     const page = await context.newPage();
 
-    // 로그인 (c17c45a에서 동작 확인된 방식 그대로)
+    // 로그인
     onProgress('로그인 중...');
-    await page.goto('https://partner.skillflo.io');
-    await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(1000);
+    await page.goto('https://partner.skillflo.io', { waitUntil: 'load', timeout: 30000 });
+    await page.waitForTimeout(1500);
 
     const emailSel = 'input[type="email"], input[name="email"], input[placeholder*="이메일"], input[placeholder*="아이디"]';
     const emailInput = page.locator(emailSel).first();
     const pwInput = page.locator('input[type="password"]').first();
 
+    await emailInput.waitFor({ state: 'visible', timeout: 10000 });
     await emailInput.click();
     await page.keyboard.type(credentials.email, { delay: 80 });
     await pwInput.click();
@@ -237,8 +237,7 @@ async function runMembersDownload(companies, credentials, onProgress) {
       await page.keyboard.press('Enter');
     }
 
-    await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(3000);
+    await page.waitForTimeout(4000);
 
     const url = page.url();
     onProgress(`현재 URL: ${url}`);
@@ -251,8 +250,7 @@ async function runMembersDownload(companies, credentials, onProgress) {
     await page.setViewportSize({ width: 1920, height: 1080 });
 
     // 구성원 관리 페이지
-    await page.goto('https://partner.skillflo.io/members');
-    await page.waitForLoadState('networkidle');
+    await page.goto('https://partner.skillflo.io/members', { waitUntil: 'load', timeout: 30000 });
     await page.waitForTimeout(3000);
 
     const results = [];
