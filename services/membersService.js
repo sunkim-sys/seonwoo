@@ -217,34 +217,41 @@ async function runMembersDownload(companies, credentials, onProgress) {
     });
     const page = await context.newPage();
 
-    // 로그인
+    // 로그인 — 로그인 페이지로 직접 이동
     onProgress('로그인 중...');
-    await page.goto('https://partner.skillflo.io');
-    await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(1000);
+    await page.goto('https://partner.skillflo.io/auth/signin');
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(1500);
 
-    // 로그인 폼 — React 입력 필드는 keyboard.type() 사용
+    // 이메일 입력 필드가 실제로 렌더링될 때까지 대기
     const emailSel = 'input[type="email"], input[name="email"], input[placeholder*="이메일"], input[placeholder*="아이디"]';
-    const pwSel = 'input[type="password"]';
     const emailInput = page.locator(emailSel).first();
-    const pwInput = page.locator(pwSel).first();
+    await emailInput.waitFor({ state: 'visible', timeout: 10000 });
 
-    await emailInput.click();
-    await page.keyboard.type(credentials.email, { delay: 80 });
-    await pwInput.click();
-    await page.keyboard.type(credentials.password, { delay: 80 });
+    // 이메일 입력
+    await emailInput.click({ clickCount: 3 });
+    await page.keyboard.type(credentials.email, { delay: 60 });
+    await page.waitForTimeout(200);
 
-    // 로그인 버튼 클릭 시도, 없으면 Enter
+    // 비밀번호 입력
+    const pwInput = page.locator('input[type="password"]').first();
+    await pwInput.click({ clickCount: 3 });
+    await page.keyboard.type(credentials.password, { delay: 60 });
+    await page.waitForTimeout(300);
+
+    // 로그인 버튼 클릭 (없으면 Enter)
     const loginBtn = page.locator('button[type="submit"], button').filter({ hasText: /로그인|signin|login/i }).first();
     if (await loginBtn.count() > 0) {
       await loginBtn.click();
     } else {
-      await page.keyboard.press('Enter');
+      await pwInput.press('Enter');
     }
 
-    // 로그인 완료 대기
-    await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(3000);
+    // URL이 signin에서 벗어날 때까지 대기 (최대 15초)
+    try {
+      await page.waitForURL(url => !url.includes('signin') && !url.includes('login'), { timeout: 15000 });
+    } catch (_) { /* 타임아웃 시 아래에서 URL 재확인 */ }
+    await page.waitForTimeout(2000);
 
     const url = page.url();
     onProgress(`현재 URL: ${url}`);
