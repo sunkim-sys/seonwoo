@@ -29,25 +29,51 @@ function parseCSV(buffer) {
 }
 
 async function downloadCompanyMembers(page, company, tmpDir) {
-  // 1. 회사 선택기 위치 찾기
+  // 1. 회사 선택기 위치 찾기 (다양한 전략 시도)
   const selectorInfo = await page.evaluate(() => {
     const W = window.innerWidth;
+
+    // 전략 1: '관리자' 텍스트 기준으로 좌측 형제 탐색 (조건 완화)
     for (const el of document.querySelectorAll('*')) {
-      if (el.textContent.trim() !== '관리자') continue;
+      const text = el.textContent.trim();
+      if (!text.includes('관리자')) continue;
+      if (el.children.length > 5) continue;
       const rect = el.getBoundingClientRect();
-      if (rect.x < W * 0.5 || rect.y > 80 || rect.width === 0) continue;
+      if (rect.width === 0 || rect.height === 0 || rect.y > 100) continue;
+      if (rect.x < W * 0.4) continue;
       let p = el.parentElement;
-      for (let i = 0; i < 6; i++) {
+      for (let i = 0; i < 8; i++) {
         if (p && p.previousElementSibling) {
           const prev = p.previousElementSibling;
           const r = prev.getBoundingClientRect();
-          if (r.width > 30 && r.x > W * 0.4 && r.y < 80) {
-            return { x: r.x + r.width / 2, y: r.y + r.height / 2 };
+          if (r.width > 30 && r.height > 0 && r.y < 100 && r.x > W * 0.2) {
+            return { x: r.x + r.width / 2, y: r.y + r.height / 2, strategy: 1 };
           }
         }
         p = p ? p.parentElement : null;
       }
     }
+
+    // 전략 2: React-Select 컨테이너 직접 탐색
+    for (const sel of ['[class*="select__control"]', '[class*="Select__control"]', '[class*="select-container"]']) {
+      for (const el of document.querySelectorAll(sel)) {
+        const r = el.getBoundingClientRect();
+        if (r.width > 50 && r.height > 0 && r.y < 100 && r.x > W * 0.2) {
+          return { x: r.x + r.width / 2, y: r.y + r.height / 2, strategy: 2 };
+        }
+      }
+    }
+
+    // 전략 3: 헤더/네비 영역에서 pointer cursor를 가진 요소 탐색
+    for (const el of document.querySelectorAll('header *, nav *, [class*="header"] *, [class*="gnb"] *')) {
+      const r = el.getBoundingClientRect();
+      if (r.width < 60 || r.height < 20 || r.height > 60 || r.y > 80) continue;
+      if (r.x < W * 0.2 || r.x > W * 0.9) continue;
+      if (window.getComputedStyle(el).cursor === 'pointer') {
+        return { x: r.x + r.width / 2, y: r.y + r.height / 2, strategy: 3 };
+      }
+    }
+
     return null;
   });
   if (!selectorInfo) throw new Error('회사 선택기 없음');
@@ -185,7 +211,10 @@ async function runMembersDownload(companies, credentials, onProgress) {
   });
 
   try {
-    const context = await browser.newContext({ acceptDownloads: true });
+    const context = await browser.newContext({
+      acceptDownloads: true,
+      viewport: { width: 1920, height: 1080 },
+    });
     const page = await context.newPage();
 
     // 로그인
@@ -227,7 +256,7 @@ async function runMembersDownload(companies, credentials, onProgress) {
     // 구성원 관리 페이지
     await page.goto('https://partner.skillflo.io/members');
     await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(3000);
 
     const results = [];
     for (let i = 0; i < companies.length; i++) {
