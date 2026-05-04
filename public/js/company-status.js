@@ -21,8 +21,8 @@ fileInput.addEventListener('change', (e) => {
 });
 
 function selectFile(file) {
-  if (!file.name.match(/\.xlsx?$/i)) {
-    showStatus('엑셀 파일(.xlsx)만 지원합니다.', 'error');
+  if (!file.name.match(/\.(xlsx?|csv)$/i)) {
+    showStatus('.xlsx 또는 .csv 파일만 지원합니다.', 'error');
     return;
   }
   selectedFile = file;
