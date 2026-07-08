@@ -1,4 +1,5 @@
 const XLSX = require('xlsx-js-style');
+const iconv = require('iconv-lite');
 
 const WEEKDAY_ORDER = ['월', '화', '수', '목', '금', '토', '일'];
 const WEEKDAY_BY_JS_DAY = { 1: '월', 2: '화', 3: '수', 4: '목', 5: '금', 6: '토', 0: '일' };
@@ -12,8 +13,17 @@ const TIME_BUCKETS = [
   { label: '21:00 - 24:00', hours: [21, 22, 23] },
 ];
 
+function decodeCsvBuffer(buffer) {
+  if (buffer.length >= 3 && buffer[0] === 0xef && buffer[1] === 0xbb && buffer[2] === 0xbf) {
+    return buffer.slice(3).toString('utf-8');
+  }
+  const utf8 = buffer.toString('utf-8');
+  if (!utf8.includes('�')) return utf8;
+  return iconv.decode(buffer, 'cp949');
+}
+
 function parseCsv(buffer) {
-  let text = buffer.toString('utf-8');
+  let text = decodeCsvBuffer(buffer);
   if (text.charCodeAt(0) === 0xfeff) text = text.slice(1);
 
   const rows = [];
@@ -65,7 +75,7 @@ function buildHeaderIndex(headerRow, required) {
       .map(c => normalized.indexOf(normalizeHeader(c)))
       .find(i => i !== -1);
     if (found === undefined) {
-      throw new Error(`필수 컬럼을 찾을 수 없습니다: ${candidates[0]}`);
+      throw new Error(`필수 컬럼을 찾을 수 없습니다: ${candidates[0]} (실제 헤더: ${headerRow.join(', ')})`);
     }
     index[key] = found;
   }
