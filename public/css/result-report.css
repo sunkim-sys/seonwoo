@@ -1,0 +1,150 @@
+.rr-upload-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.rr-upload-slot .upload-area {
+  padding: 32px 20px;
+  margin-bottom: 0;
+}
+
+.rr-upload-slot .upload-area .icon {
+  font-size: 32px;
+  margin-bottom: 10px;
+}
+
+.rr-upload-slot .upload-area p {
+  font-size: 13px;
+}
+
+.rr-input-group {
+  margin-bottom: 24px;
+}
+
+.rr-input-group label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+
+.rr-input-group input[type="number"] {
+  width: 220px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  background: var(--surface);
+  color: var(--text);
+}
+
+.rr-input-group input[type="number"]:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.rr-input-group .rr-hint {
+  margin-top: 8px;
+  margin-bottom: 0;
+}
+
+.rr-results {
+  margin-top: 32px;
+}
+
+.rr-results.show {
+  display: block;
+  animation: fadeInUp 0.3s ease;
+}
+
+.rr-results-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  gap: 12px;
+}
+
+.rr-results-header h3 {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.rr-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 24px 26px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow-sm);
+}
+
+.rr-section h4 {
+  font-size: 17px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  color: var(--text);
+}
+
+.rr-section h5 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--primary-dark);
+  margin: 20px 0 10px;
+}
+
+.rr-section h5:first-of-type {
+  margin-top: 0;
+}
+
+.rr-table-wrap {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: auto;
+  background: var(--surface-alt);
+}
+
+.rr-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.rr-table th {
+  background: var(--gradient-primary);
+  color: #fff;
+  padding: 10px 12px;
+  text-align: left;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.rr-table td {
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+}
+
+.rr-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.rr-table tbody tr:nth-child(even) td {
+  background: rgba(99, 102, 241, 0.04);
+}
+
+.rr-table-pivot th:first-child,
+.rr-table-pivot td:first-child {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.rr-hint {
+  margin-top: 10px;
+  font-size: 12.5px;
+  color: var(--text-muted);
+}

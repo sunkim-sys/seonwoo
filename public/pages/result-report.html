@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Web Tools - 결과 보고서</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/result-report.css">
+</head>
+<body>
+  <div class="topbar">
+    <button id="sidebarToggle" aria-label="메뉴">☰</button>
+    <button id="themeToggle" aria-label="테마">🌙</button>
+  </div>
+  <aside class="sidebar">
+    <h1>Web Tools</h1>
+    <nav>
+      <a href="/">홈</a>
+      <a href="/pages/ipgwa.html">입과 템플릿 변환</a>
+      <a href="/pages/lecture-info.html">강의 정보 정리</a>
+      <a href="/pages/recommend.html">강의 추천</a>
+      <a href="/pages/catalog.html">과정 리스트</a>
+      <a href="/pages/categorize.html">카테고리 자동 분류</a>
+      <a href="/pages/report.html">콘텐츠 현황</a>
+      <a href="/pages/result-report.html" class="active">결과 보고서</a>
+      <a href="/pages/members.html">구성원 다운로드</a>
+    </nav>
+  </aside>
+
+  <main class="main">
+    <h2>결과 보고서</h2>
+    <p class="desc">Skillflo에서 내려받은 raw data 3종을 업로드하면 수강 강의 현황부터 시간대별 접속 유저수까지 자동으로 계산해 보여줍니다. 기업/기간(월별·분기별)에 상관없이 사용할 수 있습니다.</p>
+
+    <div class="rr-upload-grid">
+      <div class="rr-upload-slot" data-slot="enrollment">
+        <div class="upload-area" id="uploadArea-enrollment">
+          <input type="file" id="fileInput-enrollment" accept=".csv">
+          <div class="icon">📄</div>
+          <p>개인별 수강 이력</p>
+          <p style="font-size:12px; color:var(--text-muted); margin-top:4px;">Skillflo 수강 이력 raw data (.csv)</p>
+          <div class="filename" id="fileName-enrollment"></div>
+        </div>
+      </div>
+      <div class="rr-upload-slot" data-slot="hourly">
+        <div class="upload-area" id="uploadArea-hourly">
+          <input type="file" id="fileInput-hourly" accept=".csv">
+          <div class="icon">🕐</div>
+          <p>통합 대시보드 - 시간대별 표</p>
+          <p style="font-size:12px; color:var(--text-muted); margin-top:4px;">시간대, 계정수 등 (.csv)</p>
+          <div class="filename" id="fileName-hourly"></div>
+        </div>
+      </div>
+      <div class="rr-upload-slot" data-slot="daily">
+        <div class="upload-area" id="uploadArea-daily">
+          <input type="file" id="fileInput-daily" accept=".csv">
+          <div class="icon">📅</div>
+          <p>통합 대시보드 - 날짜별 표</p>
+          <p style="font-size:12px; color:var(--text-muted); margin-top:4px;">기준 일자, 계정수 등 (.csv)</p>
+          <div class="filename" id="fileName-daily"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="rr-input-group">
+      <label for="totalEnrolledInput">총 입과인원</label>
+      <input type="number" id="totalEnrolledInput" min="1" placeholder="예: 496">
+      <p class="rr-hint">수강 중 인원은 raw data에서 자동 집계되고, 미수강 인원·수강 비중은 여기 입력한 총 입과인원 기준으로 계산됩니다.</p>
+    </div>
+
+    <button class="btn btn-primary" id="generateBtn" disabled>결과 보고서 생성</button>
+
+    <div class="status" id="status"></div>
+
+    <div id="rrResults" class="rr-results" style="display:none;">
+      <div class="rr-results-header">
+        <h3 id="rrTitle"></h3>
+        <button class="btn-download-original" id="downloadBtn">엑셀 다운로드</button>
+      </div>
+
+      <section class="rr-section">
+        <h4>1. 수강 강의 현황</h4>
+
+        <h5>1-1. 인기 카테고리</h5>
+        <div class="rr-table-wrap">
+          <table class="rr-table">
+            <thead><tr><th>No.</th><th>카테고리</th><th>수강 비중</th></tr></thead>
+            <tbody id="tbl-category"></tbody>
+          </table>
+        </div>
+
+        <h5>1-2. 인기강의 top 5 (수강 시간 기준)</h5>
+        <div class="rr-table-wrap">
+          <table class="rr-table">
+            <thead><tr><th>No.</th><th>카테고리</th><th>강의명</th><th>수강 시간</th></tr></thead>
+            <tbody id="tbl-topByTime"></tbody>
+          </table>
+        </div>
+
+        <h5>1-3. 인기강의 top 5 (수강 인원 기준)</h5>
+        <div class="rr-table-wrap">
+          <table class="rr-table">
+            <thead><tr><th>No.</th><th>카테고리</th><th>강의명</th><th>수강 인원</th></tr></thead>
+            <tbody id="tbl-topByHeadcount"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="rr-section">
+        <h4>2. 수강생 현황</h4>
+
+        <h5>2-1. 수강 현황</h5>
+        <div class="rr-table-wrap">
+          <table class="rr-table">
+            <thead><tr><th>총 수강인원</th><th>수강 중 인원</th><th>미수강 인원</th><th>수강 비중(%)</th></tr></thead>
+            <tbody id="tbl-status"></tbody>
+          </table>
+        </div>
+
+        <h5>2-2. 주요 우수 수강생 top 5 (수강 시간 기준)</h5>
+        <div class="rr-table-wrap">
+          <table class="rr-table">
+            <thead><tr><th>No.</th><th>이름</th><th>이메일</th><th>직급</th><th>부서</th><th>수강시간</th></tr></thead>
+            <tbody id="tbl-topStudents"></tbody>
+          </table>
+        </div>
+
+        <h5>2-3. 요일 별 접속 유저수</h5>
+        <div class="rr-table-wrap">
+          <table class="rr-table rr-table-pivot">
+            <thead><tr id="thead-weekday"></tr></thead>
+            <tbody id="tbl-weekday"></tbody>
+          </table>
+        </div>
+
+        <h5>2-4. 시간대 별 접속 유저수</h5>
+        <div class="rr-table-wrap">
+          <table class="rr-table rr-table-pivot">
+            <thead><tr id="thead-hourly"></tr></thead>
+            <tbody id="tbl-hourly"></tbody>
+          </table>
+        </div>
+        <p class="rr-hint" id="hourlyAverage"></p>
+      </section>
+    </div>
+  </main>
+
+  <script src="/js/layout.js"></script>
+  <script src="/js/result-report.js"></script>
+</body>
+</html>
