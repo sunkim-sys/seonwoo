@@ -1,4 +1,4 @@
-const XLSX = require('xlsx');
+const XLSX = require('xlsx-js-style');
 
 const WEEKDAY_ORDER = ['월', '화', '수', '목', '금', '토', '일'];
 const WEEKDAY_BY_JS_DAY = { 1: '월', 2: '화', 3: '수', 4: '목', 5: '금', 6: '토', 0: '일' };
@@ -79,14 +79,11 @@ function toNumber(v) {
 
 function formatDuration(totalSecondsRaw) {
   const totalSeconds = Math.round(totalSecondsRaw);
-  const days = Math.floor(totalSeconds / 86400);
-  let rem = totalSeconds % 86400;
-  const h = Math.floor(rem / 3600); rem %= 3600;
-  const m = Math.floor(rem / 60);
-  const s = rem % 60;
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
+  const s = totalSeconds % 60;
   const pad = n => String(n).padStart(2, '0');
-  const hms = `${pad(h)}:${pad(m)}:${pad(s)}`;
-  return days > 0 ? `${days}일 ${hms}` : hms;
+  return `${pad(h)}:${pad(m)}:${pad(s)}`;
 }
 
 function parseKoreanDate(str) {
@@ -107,7 +104,7 @@ function parseEnrollmentFile(buffer) {
     department: ['소속부서'],
     category: ['노출카테고리1'],
     courseName: ['강의명'],
-    periodSeconds: ['기간내총수강시간(S)'],
+    periodSeconds: ['기간내누적수강시간(S)'],
     periodRate: ['기간내수강률(%)'],
   });
 
@@ -313,53 +310,151 @@ function pct(n) {
   return `${(n * 100).toFixed(1)}%`;
 }
 
+const REPORT_COLS = 8;
+
+function borderAll(color) {
+  const b = { style: 'thin', color: { rgb: color } };
+  return { top: b, bottom: b, left: b, right: b };
+}
+
+function styleTitle(cell) {
+  cell.s = {
+    font: { name: 'Pretendard', sz: 18, bold: true, color: { rgb: 'FFFFFFFF' } },
+    fill: { patternType: 'solid', fgColor: { rgb: 'FF4F46E5' } },
+    alignment: { horizontal: 'center', vertical: 'center' },
+  };
+}
+
+function styleSection(cell) {
+  cell.s = {
+    font: { name: 'Pretendard', sz: 14, bold: true, color: { rgb: 'FF1E293B' } },
+    fill: { patternType: 'solid', fgColor: { rgb: 'FFEEF2FF' } },
+    alignment: { horizontal: 'left', vertical: 'center' },
+  };
+}
+
+function styleSubsection(cell) {
+  cell.s = {
+    font: { name: 'Pretendard', sz: 12, bold: true, color: { rgb: 'FF4F46E5' } },
+    alignment: { horizontal: 'left', vertical: 'center' },
+    border: { bottom: { style: 'thin', color: { rgb: 'FFC7D2FE' } } },
+  };
+}
+
+function styleTableHeader(cell) {
+  cell.s = {
+    font: { name: 'Pretendard', sz: 11, bold: true, color: { rgb: 'FFFFFFFF' } },
+    fill: { patternType: 'solid', fgColor: { rgb: 'FF6366F1' } },
+    alignment: { horizontal: 'center', vertical: 'center' },
+    border: borderAll('FF4338CA'),
+  };
+}
+
+function styleBody(cell, zebra) {
+  cell.s = {
+    font: { name: 'Pretendard', sz: 11, color: { rgb: 'FF0F172A' } },
+    fill: zebra ? { patternType: 'solid', fgColor: { rgb: 'FFF8FAFC' } } : undefined,
+    alignment: { horizontal: 'left', vertical: 'center' },
+    border: borderAll('FFE2E8F0'),
+  };
+}
+
+function styleNote(cell) {
+  cell.s = {
+    font: { name: 'Pretendard', sz: 10, italic: true, color: { rgb: 'FF64748B' } },
+    alignment: { horizontal: 'left', vertical: 'center' },
+  };
+}
+
 function buildExportWorkbook(report) {
-  const aoa = [];
-  aoa.push([`${report.company} 운영 레포트 (${report.periodLabel})`]);
-  aoa.push([]);
+  const rowsMeta = [];
+  const push = (cells, style, opts = {}) => rowsMeta.push({ cells, style, ...opts });
 
-  aoa.push(['1. 수강 강의 현황']);
-  aoa.push(['1-1. 인기 카테고리']);
-  aoa.push(['No.', '카테고리', '수강 비중']);
-  report.categoryShare.forEach(c => aoa.push([c.no, c.category, pct(c.share)]));
-  aoa.push([]);
+  push([`${report.company} 결과 보고서 (${report.periodLabel})`], 'title', { colSpan: REPORT_COLS, height: 32 });
+  push([], 'blank');
 
-  aoa.push(['1-2. 인기강의 top 5 (수강 시간 기준)']);
-  aoa.push(['No.', '카테고리', '강의명', '수강 시간']);
-  report.topByTime.forEach(c => aoa.push([c.no, c.category, c.courseName, c.duration]));
-  aoa.push([]);
+  push(['1. 수강 강의 현황'], 'section', { colSpan: REPORT_COLS, height: 24 });
+  push(['1-1. 인기 카테고리'], 'subsection', { colSpan: REPORT_COLS, height: 20 });
+  push(['No.', '카테고리', '수강 비중'], 'header', { colSpan: 3 });
+  report.categoryShare.forEach((c, i) => push([c.no, c.category, pct(c.share)], 'body', { colSpan: 3, zebra: i % 2 === 1 }));
+  push([], 'blank');
 
-  aoa.push(['1-3. 인기강의 top 5 (수강 인원 기준)']);
-  aoa.push(['No.', '카테고리', '강의명', '수강 인원']);
-  report.topByHeadcount.forEach(c => aoa.push([c.no, c.category, c.courseName, c.count]));
-  aoa.push([]);
+  push(['1-2. 인기강의 top 5 (수강 시간 기준)'], 'subsection', { colSpan: REPORT_COLS, height: 20 });
+  push(['No.', '카테고리', '강의명', '수강 시간'], 'header', { colSpan: 4 });
+  report.topByTime.forEach((c, i) => push([c.no, c.category, c.courseName, c.duration], 'body', { colSpan: 4, zebra: i % 2 === 1 }));
+  push([], 'blank');
 
-  aoa.push(['2. 수강생 현황']);
-  aoa.push(['2-1. 수강 현황']);
-  aoa.push(['총 수강인원', '수강 중 인원', '미수강 인원', '수강 비중(%)']);
-  aoa.push([report.enrollmentStatus.total, report.enrollmentStatus.studying, report.enrollmentStatus.notStarted, pct(report.enrollmentStatus.ratio)]);
-  aoa.push([]);
+  push(['1-3. 인기강의 top 5 (수강 인원 기준)'], 'subsection', { colSpan: REPORT_COLS, height: 20 });
+  push(['No.', '카테고리', '강의명', '수강 인원'], 'header', { colSpan: 4 });
+  report.topByHeadcount.forEach((c, i) => push([c.no, c.category, c.courseName, c.count], 'body', { colSpan: 4, zebra: i % 2 === 1 }));
+  push([], 'blank');
 
-  aoa.push(['2-2. 주요 우수 수강생 top 5 (수강 시간 기준)']);
-  aoa.push(['No.', '이름', '이메일', '직급', '부서', '수강시간']);
-  report.topStudents.forEach(s => aoa.push([s.no, s.name, s.email, s.position, s.department, s.duration]));
-  aoa.push([]);
+  push(['2. 수강생 현황'], 'section', { colSpan: REPORT_COLS, height: 24 });
+  push(['2-1. 수강 현황'], 'subsection', { colSpan: REPORT_COLS, height: 20 });
+  push(['총 수강인원', '수강 중 인원', '미수강 인원', '수강 비중(%)'], 'header', { colSpan: 4 });
+  const s = report.enrollmentStatus;
+  push([s.total, s.studying, s.notStarted, pct(s.ratio)], 'body', { colSpan: 4, zebra: false });
+  push([], 'blank');
 
-  aoa.push(['2-3. 요일 별 접속 유저수']);
-  aoa.push(['구분', ...report.weekdayStats.map(w => w.label)]);
-  aoa.push(['누적 수강 횟수', ...report.weekdayStats.map(w => w.accumulated)]);
-  aoa.push(['접속률', ...report.weekdayStats.map(w => pct(w.ratio))]);
-  aoa.push(['평균 수강 유저 수', ...report.weekdayStats.map(w => Math.round(w.average * 100) / 100)]);
-  aoa.push([]);
+  push(['2-2. 주요 우수 수강생 top 5 (수강 시간 기준)'], 'subsection', { colSpan: REPORT_COLS, height: 20 });
+  push(['No.', '이름', '이메일', '직급', '부서', '수강시간'], 'header', { colSpan: 6 });
+  report.topStudents.forEach((st, i) => push([st.no, st.name, st.email, st.position, st.department, st.duration], 'body', { colSpan: 6, zebra: i % 2 === 1 }));
+  push([], 'blank');
 
-  aoa.push(['2-4. 시간대 별 접속 유저수']);
-  aoa.push(['구분', ...report.hourlyStats.buckets.map(b => b.label)]);
-  aoa.push(['누적 수강 횟수', ...report.hourlyStats.buckets.map(b => b.accumulated)]);
-  aoa.push(['접속률', ...report.hourlyStats.buckets.map(b => pct(b.ratio))]);
-  aoa.push(['평균 수강 횟수', Math.round(report.hourlyStats.averagePerHour * 100) / 100]);
+  push(['2-3. 요일 별 접속 유저수'], 'subsection', { colSpan: REPORT_COLS, height: 20 });
+  push(['구분', ...report.weekdayStats.map(w => w.label)], 'header', { colSpan: REPORT_COLS });
+  push(['누적 수강 횟수', ...report.weekdayStats.map(w => w.accumulated)], 'body', { colSpan: REPORT_COLS, zebra: false });
+  push(['접속률', ...report.weekdayStats.map(w => pct(w.ratio))], 'body', { colSpan: REPORT_COLS, zebra: true });
+  push(['평균 수강 유저 수', ...report.weekdayStats.map(w => Math.round(w.average * 100) / 100)], 'body', { colSpan: REPORT_COLS, zebra: false });
+  push([], 'blank');
+
+  push(['2-4. 시간대 별 접속 유저수'], 'subsection', { colSpan: REPORT_COLS, height: 20 });
+  push(['구분', ...report.hourlyStats.buckets.map(b => b.label)], 'header', { colSpan: REPORT_COLS });
+  push(['누적 수강 횟수', ...report.hourlyStats.buckets.map(b => b.accumulated)], 'body', { colSpan: REPORT_COLS, zebra: false });
+  push(['접속률', ...report.hourlyStats.buckets.map(b => pct(b.ratio))], 'body', { colSpan: REPORT_COLS, zebra: true });
+  push([`시간대 평균 접속 계정수: ${Math.round(report.hourlyStats.averagePerHour * 100) / 100}`], 'note', { colSpan: REPORT_COLS });
+
+  const aoa = rowsMeta.map(rm => {
+    const row = (rm.cells || []).slice(0, REPORT_COLS);
+    while (row.length < REPORT_COLS) row.push('');
+    return row;
+  });
 
   const ws = XLSX.utils.aoa_to_sheet(aoa);
-  ws['!cols'] = Array.from({ length: 8 }, () => ({ wch: 20 }));
+  ws['!merges'] = [];
+  ws['!rows'] = [];
+  ws['!cols'] = [
+    { wch: 22 }, { wch: 26 }, { wch: 42 }, { wch: 18 },
+    { wch: 16 }, { wch: 16 }, { wch: 16 }, { wch: 16 },
+  ];
+
+  rowsMeta.forEach((rm, r) => {
+    if (rm.height) ws['!rows'][r] = { hpt: rm.height };
+    if (['title', 'section', 'subsection', 'note'].includes(rm.style)) {
+      ws['!merges'].push({ s: { r, c: 0 }, e: { r, c: REPORT_COLS - 1 } });
+    }
+  });
+
+  const styleFns = {
+    title: styleTitle,
+    section: styleSection,
+    subsection: styleSubsection,
+    header: styleTableHeader,
+    note: styleNote,
+  };
+
+  rowsMeta.forEach((rm, r) => {
+    if (rm.style === 'blank') return;
+    const colSpan = rm.colSpan || REPORT_COLS;
+    for (let c = 0; c < colSpan; c++) {
+      const addr = XLSX.utils.encode_cell({ r, c });
+      let cell = ws[addr];
+      if (!cell) { cell = { t: 's', v: '' }; ws[addr] = cell; }
+      if (rm.style === 'body') styleBody(cell, rm.zebra);
+      else if (styleFns[rm.style]) styleFns[rm.style](cell);
+    }
+  });
+
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, '결과보고서');
   return XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
