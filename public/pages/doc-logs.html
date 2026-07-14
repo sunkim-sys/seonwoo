@@ -6,39 +6,18 @@
   <title>Web Tools - 매뉴얼 접속 로그</title>
   <link rel="stylesheet" href="/css/style.css">
   <style>
-    .doclog-summary-wrap, .doclog-raw-wrap {
+    .doclog-embed-wrap {
       border: 1px solid var(--border);
       border-radius: 10px;
-      overflow: auto;
-      max-height: 460px;
-      background: var(--surface);
-      margin-bottom: 32px;
-    }
-    .doclog-filter {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      margin-bottom: 16px;
-    }
-    .doclog-filter input {
-      flex: 1;
-      padding: 11px 14px;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      font-size: 14px;
-      font-family: inherit;
-      color: var(--text);
+      overflow: hidden;
       background: var(--surface);
     }
-    .doclog-section-title {
-      font-size: 16px;
-      font-weight: 700;
-      margin: 28px 0 12px;
-    }
-    .doclog-hint {
-      font-size: 12.5px;
-      color: var(--text-muted);
-      margin-bottom: 4px;
+    .doclog-embed-wrap iframe {
+      width: 100%;
+      height: 80vh;
+      min-height: 600px;
+      border: 0;
+      display: block;
     }
   </style>
 </head>
@@ -65,38 +44,17 @@
 
   <main class="main">
     <h2>매뉴얼 접속 로그</h2>
-    <p class="desc">채널톡 도움말센터(docs.channel.io) 문서 페이지에 삽입한 추적 스크립트가 보낸 조회 기록입니다.</p>
+    <p class="desc">채널톡 도움말센터(docs.channel.io) 문서별 조회수입니다. Google Analytics(Looker Studio) 데이터를 그대로 보여줍니다.</p>
 
-    <div id="loading" class="loading">데이터를 불러오고 있습니다...</div>
-
-    <div id="content" style="display:none;">
-      <div class="doclog-section-title">매뉴얼별 조회수</div>
-      <div class="doclog-summary-wrap">
-        <table class="preview-table">
-          <thead>
-            <tr><th>매뉴얼(문서)</th><th>URL</th><th>조회수</th><th>마지막 조회</th></tr>
-          </thead>
-          <tbody id="summaryBody"></tbody>
-        </table>
-      </div>
-
-      <div class="doclog-section-title">최근 접속 로그</div>
-      <p class="doclog-hint">최근 500건까지 표시됩니다.</p>
-      <div class="doclog-filter">
-        <input type="text" id="filterInput" placeholder="매뉴얼 제목, URL로 검색...">
-      </div>
-      <div class="doclog-raw-wrap">
-        <table class="preview-table">
-          <thead>
-            <tr><th>시각</th><th>매뉴얼</th><th>Referrer</th><th>IP</th><th>User-Agent</th></tr>
-          </thead>
-          <tbody id="rawBody"></tbody>
-        </table>
-      </div>
+    <div class="doclog-embed-wrap">
+      <iframe
+        src="https://datastudio.google.com/embed/reporting/1db1bc95-1c31-4165-a6d3-cb313a3f4d44/page/rhp3F"
+        allowfullscreen
+        sandbox="allow-storage-access-by-user-activation allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox">
+      </iframe>
     </div>
   </main>
 
   <script src="/js/layout.js"></script>
-  <script src="/js/doc-logs.js"></script>
 </body>
 </html>
