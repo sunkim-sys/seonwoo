@@ -56,7 +56,7 @@
 
     filterCsm.innerHTML = '<option value="">전체 CSM</option>' +
       csmSet.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
-    filterAe.innerHTML = '<option value="">전체 AE</option>' +
+    filterAe.innerHTML = '<option value="">전체 LD</option>' +
       aeSet.map(a => `<option value="${escapeHtml(a)}">${escapeHtml(a)}</option>`).join('');
 
     document.getElementById('csmOptions').innerHTML =
