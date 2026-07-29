@@ -5,6 +5,7 @@ const {
   createCompany,
   updateCompany,
   deleteCompany,
+  getCsmStats,
 } = require('../services/companyListService');
 
 function readJsonBody(req) {
@@ -29,6 +30,12 @@ async function handleCompanyListRoutes(req, res, { sendJson }) {
   const idMatch = pathname.match(/^\/api\/company-list\/(\d+)$/);
 
   try {
+    // GET /api/company-list/stats/csm
+    if (req.method === 'GET' && pathname === '/api/company-list/stats/csm') {
+      const stats = await getCsmStats();
+      return sendJson(res, 200, stats);
+    }
+
     // GET /api/company-list?search=&csm=&ae=&status=
     if (req.method === 'GET' && pathname === '/api/company-list') {
       const rows = await listCompanies(parsed.query);

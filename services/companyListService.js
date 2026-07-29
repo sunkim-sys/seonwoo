@@ -108,6 +108,26 @@ async function deleteCompany(id) {
   await db.query(`DELETE FROM ${TABLE} WHERE id = $1`, [id]);
 }
 
+async function getCsmStats() {
+  await ensureTable();
+  const { rows } = await db.query(`
+    SELECT
+      COALESCE(NULLIF(TRIM(csm), ''), '미배정') AS csm,
+      COUNT(*) FILTER (WHERE status = 'ongoing') AS ongoing,
+      COUNT(*) FILTER (WHERE status = 'closed') AS closed,
+      COUNT(*) AS total
+    FROM ${TABLE}
+    GROUP BY 1
+    ORDER BY total DESC, csm ASC
+  `);
+  return rows.map(r => ({
+    csm: r.csm,
+    ongoing: Number(r.ongoing),
+    closed: Number(r.closed),
+    total: Number(r.total),
+  }));
+}
+
 module.exports = {
   ensureTable,
   listCompanies,
@@ -115,5 +135,6 @@ module.exports = {
   createCompany,
   updateCompany,
   deleteCompany,
+  getCsmStats,
   FIELDS,
 };
