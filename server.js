@@ -9,6 +9,7 @@ const { handleReportRoutes } = require('./routes/report');
 const { handleCategorizeRoutes } = require('./routes/categorize');
 const { handleMembersRoutes } = require('./routes/members');
 const { handleResultReportRoutes } = require('./routes/resultReport');
+const { handleCompanyListRoutes } = require('./routes/companyList');
 
 const PORT = process.env.PORT || 3000;
 
@@ -110,7 +111,7 @@ const server = http.createServer(async (req, res) => {
   try {
     // CORS - allow all for local dev
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
     if (req.method === 'OPTIONS') {
       res.writeHead(204);
@@ -142,6 +143,9 @@ const server = http.createServer(async (req, res) => {
     }
     if (req.url.startsWith('/api/result-report')) {
       return await handleResultReportRoutes(req, res, { parseMultipart, sendJson });
+    }
+    if (req.url.startsWith('/api/company-list')) {
+      return await handleCompanyListRoutes(req, res, { sendJson });
     }
 
     // Static files

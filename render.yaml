@@ -13,3 +13,5 @@ services:
         sync: false
       - key: SKILLFLO_PASSWORD
         sync: false
+      - key: DATABASE_URL
+        sync: false
