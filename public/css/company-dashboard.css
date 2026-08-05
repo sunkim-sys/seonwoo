@@ -98,6 +98,14 @@
   grid-template-columns: 100px 1fr;
   align-items: center;
   gap: 12px;
+  cursor: pointer;
+  border-radius: 6px;
+  padding: 2px 4px;
+  margin: -2px -4px;
+}
+
+.csm-row:hover {
+  background: var(--surface-alt);
 }
 
 .csm-row-label {
@@ -172,6 +180,14 @@
 
 .stats-table tbody tr:last-child td {
   border-bottom: none;
+}
+
+.stats-table tbody tr {
+  cursor: pointer;
+}
+
+.stats-table tbody tr:hover td {
+  background: var(--surface-alt);
 }
 
 @media (max-width: 640px) {

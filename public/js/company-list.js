@@ -1,6 +1,7 @@
 (function () {
   const API = '/api/company-list';
   let allRows = [];
+  let urlFiltersApplied = false;
 
   const loadingEl = document.getElementById('loading');
   const errorBox = document.getElementById('errorBox');
@@ -41,6 +42,10 @@
       if (!res.ok) throw new Error((await res.json()).error || '조회 실패');
       allRows = await res.json();
       populateFilterOptions();
+      if (!urlFiltersApplied) {
+        urlFiltersApplied = true;
+        applyUrlFilters();
+      }
       render();
     } catch (err) {
       showError('데이터를 불러오지 못했습니다: ' + err.message);
@@ -63,6 +68,15 @@
       csmSet.map(c => `<option value="${escapeHtml(c)}">`).join('');
     document.getElementById('aeOptions').innerHTML =
       aeSet.map(a => `<option value="${escapeHtml(a)}">`).join('');
+  }
+
+  function applyUrlFilters() {
+    const csm = new URLSearchParams(location.search).get('csm');
+    if (!csm) return;
+    if (![...filterCsm.options].some(o => o.value === csm)) {
+      filterCsm.insertAdjacentHTML('beforeend', `<option value="${escapeHtml(csm)}">${escapeHtml(csm)}</option>`);
+    }
+    filterCsm.value = csm;
   }
 
   function escapeHtml(str) {

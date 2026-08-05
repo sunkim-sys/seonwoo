@@ -41,8 +41,8 @@
       }
 
       return `
-        <div class="csm-row">
-          <div class="csm-row-label" title="${escapeHtml(r.csm)}">${escapeHtml(r.csm)}</div>
+        <div class="csm-row" data-csm="${escapeHtml(r.csm)}" title="클릭하면 기업 리스트에서 ${escapeHtml(r.csm)} 담당 기업을 봅니다">
+          <div class="csm-row-label">${escapeHtml(r.csm)}</div>
           <div class="csm-bar-wrap">
             <div class="csm-bar" style="width:${barWidthPct}%">${segs.join('')}</div>
             <span class="csm-row-total">${r.total}</span>
@@ -54,7 +54,7 @@
 
   function renderTable(rows) {
     statsTableBody.innerHTML = rows.map(r => `
-      <tr>
+      <tr data-csm="${escapeHtml(r.csm)}" title="클릭하면 기업 리스트에서 ${escapeHtml(r.csm)} 담당 기업을 봅니다">
         <td>${escapeHtml(r.csm)}</td>
         <td>${r.ongoing}</td>
         <td>${r.closed}</td>
@@ -63,6 +63,21 @@
       </tr>
     `).join('');
   }
+
+  function goToCompanyList(csm) {
+    if (!csm) return;
+    window.location.href = `/pages/company-list.html?csm=${encodeURIComponent(csm)}`;
+  }
+
+  csmChart.addEventListener('click', (e) => {
+    const row = e.target.closest('.csm-row');
+    if (row) goToCompanyList(row.dataset.csm);
+  });
+
+  statsTableBody.addEventListener('click', (e) => {
+    const tr = e.target.closest('tr[data-csm]');
+    if (tr) goToCompanyList(tr.dataset.csm);
+  });
 
   async function load() {
     try {

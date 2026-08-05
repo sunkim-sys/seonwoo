@@ -27,7 +27,8 @@ const MIME_TYPES = {
 };
 
 function serveStatic(req, res) {
-  let filePath = path.join(__dirname, 'public', req.url === '/' ? 'index.html' : req.url);
+  const pathname = decodeURIComponent(req.url.split('?')[0]);
+  let filePath = path.join(__dirname, 'public', pathname === '/' ? 'index.html' : pathname);
   const ext = path.extname(filePath);
   const contentType = MIME_TYPES[ext] || 'application/octet-stream';
 
