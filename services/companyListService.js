@@ -112,7 +112,7 @@ async function getCsmStats() {
   await ensureTable();
   const { rows } = await db.query(`
     SELECT
-      COALESCE(NULLIF(TRIM(csm), ''), '미배정') AS csm,
+      CASE WHEN TRIM(COALESCE(csm, '')) IN ('', '없음') THEN '미배정' ELSE TRIM(csm) END AS csm,
       COUNT(*) FILTER (WHERE status = 'ongoing') AS ongoing,
       COUNT(*) FILTER (WHERE status = 'closed') AS closed,
       COUNT(*) FILTER (WHERE status IS DISTINCT FROM 'ongoing' AND status IS DISTINCT FROM 'closed') AS other,
