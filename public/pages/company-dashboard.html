@@ -51,6 +51,10 @@
           <div class="stat-label">Closed</div>
           <div class="stat-value stat-closed" id="statClosed">-</div>
         </div>
+        <div class="stat-tile" id="statOtherTile" style="display:none;">
+          <div class="stat-label">기타(미분류)</div>
+          <div class="stat-value stat-other" id="statOther">-</div>
+        </div>
       </div>
 
       <div class="chart-card">
@@ -59,6 +63,7 @@
           <div class="legend">
             <span class="legend-item"><span class="legend-swatch swatch-ongoing"></span>Ongoing</span>
             <span class="legend-item"><span class="legend-swatch swatch-closed"></span>Closed</span>
+            <span class="legend-item"><span class="legend-swatch swatch-other"></span>기타</span>
           </div>
         </div>
         <div id="csmChart" class="csm-chart"></div>
@@ -73,6 +78,7 @@
                 <th>CSM</th>
                 <th>Ongoing</th>
                 <th>Closed</th>
+                <th>기타</th>
                 <th>Total</th>
               </tr>
             </thead>

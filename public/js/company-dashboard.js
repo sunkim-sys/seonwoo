@@ -8,6 +8,8 @@
   const statTotal = document.getElementById('statTotal');
   const statOngoing = document.getElementById('statOngoing');
   const statClosed = document.getElementById('statClosed');
+  const statOther = document.getElementById('statOther');
+  const statOtherTile = document.getElementById('statOtherTile');
   const csmChart = document.getElementById('csmChart');
   const statsTableBody = document.getElementById('statsTableBody');
 
@@ -23,17 +25,17 @@
     csmChart.innerHTML = rows.map(r => {
       const barWidthPct = (r.total / maxTotal) * 100;
       const segs = [];
+      const segOrder = [
+        { key: 'ongoing', cls: 'seg-ongoing', label: 'Ongoing' },
+        { key: 'closed', cls: 'seg-closed', label: 'Closed' },
+        { key: 'other', cls: 'seg-other', label: '기타' },
+      ].filter(s => r[s.key] > 0);
 
-      if (r.ongoing > 0) {
-        const isLast = r.closed === 0;
-        segs.push(`<div class="csm-seg seg-ongoing ${isLast ? 'seg-rounded-end' : 'seg-square'}" style="flex:${r.ongoing}" title="Ongoing ${r.ongoing}"></div>`);
-      }
-      if (r.ongoing > 0 && r.closed > 0) {
-        segs.push(`<div class="csm-seg-gap"></div>`);
-      }
-      if (r.closed > 0) {
-        segs.push(`<div class="csm-seg seg-closed seg-rounded-end" style="flex:${r.closed}" title="Closed ${r.closed}"></div>`);
-      }
+      segOrder.forEach((s, i) => {
+        const isLast = i === segOrder.length - 1;
+        segs.push(`<div class="csm-seg ${s.cls} ${isLast ? 'seg-rounded-end' : 'seg-square'}" style="flex:${r[s.key]}" title="${s.label} ${r[s.key]}"></div>`);
+        if (!isLast) segs.push(`<div class="csm-seg-gap"></div>`);
+      });
       if (r.total === 0) {
         segs.push(`<div class="csm-seg seg-closed seg-square seg-rounded-end" style="flex:1; opacity:0;"></div>`);
       }
@@ -56,6 +58,7 @@
         <td>${escapeHtml(r.csm)}</td>
         <td>${r.ongoing}</td>
         <td>${r.closed}</td>
+        <td>${r.other}</td>
         <td>${r.total}</td>
       </tr>
     `).join('');
@@ -70,10 +73,13 @@
       const totalAll = rows.reduce((s, r) => s + r.total, 0);
       const ongoingAll = rows.reduce((s, r) => s + r.ongoing, 0);
       const closedAll = rows.reduce((s, r) => s + r.closed, 0);
+      const otherAll = rows.reduce((s, r) => s + r.other, 0);
 
       statTotal.textContent = totalAll.toLocaleString();
       statOngoing.textContent = ongoingAll.toLocaleString();
       statClosed.textContent = closedAll.toLocaleString();
+      statOther.textContent = otherAll.toLocaleString();
+      statOtherTile.style.display = otherAll > 0 ? '' : 'none';
 
       renderChart(rows);
       renderTable(rows);

@@ -115,6 +115,7 @@ async function getCsmStats() {
       COALESCE(NULLIF(TRIM(csm), ''), '미배정') AS csm,
       COUNT(*) FILTER (WHERE status = 'ongoing') AS ongoing,
       COUNT(*) FILTER (WHERE status = 'closed') AS closed,
+      COUNT(*) FILTER (WHERE status IS DISTINCT FROM 'ongoing' AND status IS DISTINCT FROM 'closed') AS other,
       COUNT(*) AS total
     FROM ${TABLE}
     GROUP BY 1
@@ -124,6 +125,7 @@ async function getCsmStats() {
     csm: r.csm,
     ongoing: Number(r.ongoing),
     closed: Number(r.closed),
+    other: Number(r.other),
     total: Number(r.total),
   }));
 }

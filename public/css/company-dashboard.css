@@ -34,6 +34,7 @@
 
 .stat-value.stat-ongoing { color: #10b981; }
 .stat-value.stat-closed { color: var(--text-muted); }
+.stat-value.stat-other { color: #f59e0b; }
 
 /* Chart card */
 .chart-card, .table-card {
@@ -83,6 +84,7 @@
 
 .swatch-ongoing { background: #10b981; }
 .swatch-closed { background: var(--text-muted); }
+.swatch-other { background: #f59e0b; }
 
 /* CSM chart rows */
 .csm-chart {
@@ -126,6 +128,7 @@
 
 .csm-seg.seg-ongoing { background: #10b981; }
 .csm-seg.seg-closed { background: var(--text-muted); }
+.csm-seg.seg-other { background: #f59e0b; }
 
 .csm-seg.seg-square { border-radius: 0; }
 .csm-seg.seg-rounded-end { border-radius: 0 4px 4px 0; }
