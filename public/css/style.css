@@ -114,6 +114,64 @@ body {
   box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
 }
 
+.nav-group-toggle {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 11px 16px;
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: inherit;
+  text-align: left;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.nav-group-toggle:hover {
+  background: rgba(99, 102, 241, 0.1);
+  color: #e2e8f0;
+}
+
+.nav-group-icon {
+  margin-right: 10px;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.nav-group-label { flex: 1; }
+
+.nav-group-chevron {
+  font-size: 11px;
+  color: #64748b;
+  transition: transform 0.2s ease;
+}
+
+.nav-group.open > .nav-group-toggle .nav-group-chevron {
+  transform: rotate(90deg);
+}
+
+.nav-group-items {
+  display: none;
+  flex-direction: column;
+  gap: 2px;
+  margin: 2px 0 2px 20px;
+  padding-left: 14px;
+  border-left: 1px solid rgba(148, 163, 184, 0.15);
+}
+
+.nav-group.open > .nav-group-items {
+  display: flex;
+}
+
+.nav-group-items a {
+  padding: 9px 14px;
+  font-size: 13px;
+}
+
 .main {
   margin-left: 240px;
   padding: 48px 40px;

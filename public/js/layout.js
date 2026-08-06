@@ -35,5 +35,29 @@
       if (sidebarBtn?.contains(e.target)) return;
       sidebar.classList.remove('open');
     });
+
+    // Collapsible nav groups
+    const NAV_GROUP_KEY = 'wt-nav-groups';
+    function getGroupState() {
+      try { return JSON.parse(localStorage.getItem(NAV_GROUP_KEY) || '{}'); } catch { return {}; }
+    }
+    function setGroupState(state) {
+      localStorage.setItem(NAV_GROUP_KEY, JSON.stringify(state));
+    }
+
+    document.querySelectorAll('.nav-group').forEach(group => {
+      const toggle = group.querySelector('.nav-group-toggle');
+      const label = toggle?.querySelector('.nav-group-label')?.textContent.trim();
+      const hasActiveChild = !!group.querySelector('a.active');
+      const stored = getGroupState()[label];
+      group.classList.toggle('open', hasActiveChild || stored === true);
+
+      toggle?.addEventListener('click', () => {
+        const isOpen = group.classList.toggle('open');
+        const state = getGroupState();
+        state[label] = isOpen;
+        setGroupState(state);
+      });
+    });
   });
 })();
