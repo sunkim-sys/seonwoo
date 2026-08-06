@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Web Tools - 패키지강의 생성 가이드</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .main { max-width: none; }
+
+    .pkg-guide { font-family: 'Pretendard', 'Malgun Gothic', sans-serif; background: #f5f6f8; color: #222; border-radius: 16px; overflow: hidden; }
+
+    .pkg-app { display: grid; grid-template-columns: 1fr 320px; min-height: 640px; }
+
+    /* 왼쪽: 스크린샷 + 핫스팟 */
+    .pkg-stage { position: relative; background: #1e1e22; display: flex; align-items: center; justify-content: center; padding: 24px; }
+    .pkg-screen { position: relative; max-width: 100%; max-height: 90vh; box-shadow: 0 10px 40px rgba(0,0,0,.4); border-radius: 6px; overflow: hidden; }
+    .pkg-screen img { display: block; width: 100%; height: auto; user-select: none; -webkit-user-drag: none; }
+
+    /* 핫스팟(투명 버튼) */
+    .pkg-hotspot {
+      position: absolute;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    .pkg-hotspot.correct {
+      border: 3px solid #ff1744;
+      border-radius: 6px;
+      box-shadow: 0 0 0 2px rgba(255,255,255,.6);
+      animation: pkg-pulse 1.6s ease-in-out infinite;
+    }
+    .pkg-hotspot.correct:hover {
+      background: rgba(255, 23, 68, .12);
+    }
+    .pkg-hotspot.hint {
+      animation: pkg-flash 0.4s ease-in-out 6;
+    }
+    @keyframes pkg-pulse {
+      0%, 100% { box-shadow: 0 0 0 2px rgba(255,255,255,.6), 0 0 0 0 rgba(255, 23, 68, .6); }
+      50%      { box-shadow: 0 0 0 2px rgba(255,255,255,.6), 0 0 0 14px rgba(255, 23, 68, 0); }
+    }
+    @keyframes pkg-flash {
+      0%, 100% { background: rgba(255, 82, 82, 0); }
+      50%      { background: rgba(255, 82, 82, .35); }
+    }
+
+    /* 오답 클릭 시 흔들림 */
+    .pkg-shake { animation: pkg-shake 0.35s; }
+    @keyframes pkg-shake {
+      0%, 100% { transform: translateX(0); }
+      25%      { transform: translateX(-8px); }
+      75%      { transform: translateX(8px); }
+    }
+
+    /* 오른쪽 패널 */
+    .pkg-panel { background: #fff; padding: 28px 24px; display: flex; flex-direction: column; gap: 20px; border-left: 1px solid #e5e7eb; }
+    .pkg-progress { font-size: 13px; color: #6b7280; }
+    .pkg-progress-bar { height: 6px; background: #eef0f3; border-radius: 99px; margin-top: 8px; overflow: hidden; }
+    .pkg-progress-fill { height: 100%; background: linear-gradient(90deg, #3b82f6, #6366f1); transition: width .3s; }
+
+    .pkg-step-title { font-size: 13px; color: #6366f1; font-weight: 600; }
+    .pkg-step-instruction { font-size: 18px; line-height: 1.5; font-weight: 600; margin-top: 4px; white-space: pre-line; }
+    .pkg-step-detail { font-size: 14px; color: #4b5563; line-height: 1.6; margin-top: 8px; white-space: pre-line; }
+
+    .pkg-actions { margin-top: auto; display: flex; flex-direction: column; gap: 8px; }
+    .pkg-btn { padding: 10px 14px; border-radius: 8px; border: 1px solid #d1d5db; background: #fff; cursor: pointer; font-size: 14px; font-family: inherit; }
+    .pkg-btn:hover { background: #f9fafb; }
+    .pkg-btn-primary { background: #4f46e5; color: #fff; border-color: #4f46e5; }
+    .pkg-btn-primary:hover { background: #4338ca; }
+
+    /* 토스트 */
+    .pkg-toast {
+      position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%) translateY(20px);
+      background: #111; color: #fff; padding: 12px 20px; border-radius: 99px; font-size: 14px;
+      opacity: 0; transition: all .3s; pointer-events: none; z-index: 100;
+    }
+    .pkg-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* 완료 화면 */
+    .pkg-done { text-align: center; padding: 40px 20px; }
+    .pkg-done h2 { font-size: 22px; margin-bottom: 12px; }
+    .pkg-done p { color: #6b7280; margin-bottom: 24px; }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <button id="sidebarToggle" aria-label="메뉴">☰</button>
+    <button id="themeToggle" aria-label="테마">🌙</button>
+  </div>
+  <aside class="sidebar">
+    <h1>Web Tools</h1>
+    <nav>
+      <a href="/">홈</a>
+      <a href="/pages/lecture-info.html">강의 정보 정리</a>
+      <a href="/pages/recommend.html">강의 추천</a>
+      <a href="/pages/catalog.html">과정 리스트</a>
+      <a href="/pages/categorize.html">카테고리 자동 분류</a>
+      <a href="/pages/result-report.html">결과 보고서</a>
+      <a href="/pages/enrollment-report.html">수강 리포트</a>
+      <a href="/pages/mail-guide.html">수강안내메일 에디터</a>
+      <a href="/pages/mail-encourage.html">독려메일 에디터</a>
+      <a href="/pages/package-guide.html" class="active">패키지강의 생성 가이드</a>
+      <a href="/pages/guide-public.html">가이드센터</a>
+      <a href="/pages/guide-admin.html">가이드센터 관리자</a>
+      <a href="/pages/settlement-dashboard.html">정산 대시보드</a>
+      <a href="/pages/settlement-providers.html">CP사 관리</a>
+      <a href="/pages/settlement-contracts.html">계약 관리</a>
+      <a href="/pages/settlement-products.html">상품 관리</a>
+      <a href="/pages/settlement-revenues.html">매출 관리</a>
+      <a href="/pages/settlement-import.html">CSV Import</a>
+      <a href="/pages/settlement-settlements.html">정산</a>
+      <a href="/pages/settlement-users.html">정산 시스템 사용자</a>
+      <a href="/pages/members.html">구성원 다운로드</a>
+      <a href="/pages/company-list.html">기업 리스트</a>
+      <a href="/pages/company-dashboard.html">기업 현황 대시보드</a>
+      <a href="/pages/doc-logs.html">매뉴얼 접속 로그</a>
+    </nav>
+  </aside>
+
+  <main class="main">
+    <h2>패키지강의 생성 가이드</h2>
+    <p class="desc">패키지 구독 강의를 만드는 과정을 스크린샷 핫스팟으로 따라 해볼 수 있는 인터랙티브 가이드입니다.</p>
+
+    <div class="pkg-guide">
+      <div class="pkg-app">
+        <div class="pkg-stage">
+          <div class="pkg-screen" id="pkg-screen">
+            <img id="pkg-screenshot" alt="화면" />
+          </div>
+        </div>
+
+        <aside class="pkg-panel">
+          <div>
+            <div class="pkg-progress">
+              <span id="pkg-progress-text">1 / 14 단계</span>
+              <div class="pkg-progress-bar"><div class="pkg-progress-fill" id="pkg-progress-fill"></div></div>
+            </div>
+          </div>
+
+          <div id="pkg-content">
+            <div class="pkg-step-title" id="pkg-step-title">STEP 1</div>
+            <div class="pkg-step-instruction" id="pkg-step-instruction">시작</div>
+            <div class="pkg-step-detail" id="pkg-step-detail"></div>
+          </div>
+
+          <div class="pkg-actions">
+            <button class="pkg-btn" id="pkg-btn-hint">💡 힌트 보기</button>
+            <button class="pkg-btn" id="pkg-btn-prev">← 이전 단계</button>
+            <button class="pkg-btn" id="pkg-btn-reset">처음으로</button>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </main>
+
+  <div class="pkg-toast" id="pkg-toast"></div>
+
+  <script src="/js/layout.js"></script>
+  <script>
+(function(){
+const steps = [
+  {
+    image: "screenshots/package_01.png",
+    title: "STEP 1 — 패키지 강의 상품 만들기",
+    instruction: "패키지 구독 상품을 생성하세요.",
+    detail: "1. 패키지 강의를 위한 상품을 먼저 생성 합니다. \n\n - 구독 강의이기 때문에 구성 유형을 구독상품 플랜으로 세팅 (All Plan, Package Plan, Custom Plan) 합니다. \n\n 2. '강의 추가' 버튼을 눌러 패키지 강의로 묶여질 구독 강의를 추가합니다.",
+    hotspot: { x: 85.5, y: 31.9, w: 6, h: 5 }
+  },
+  {
+    image: "screenshots/package_02.png",
+    title: "STEP 2 — 패키지강의 만들기",
+    instruction: "패키지 강의 만들기 버튼을 클릭하세요.",
+    detail: "1. 수강신청용 패키지 강의 (껍데기 싱글 강의)를 생성 합니다. \n\n - 패키지 강의는 싱글로 오픈하여 신청을 받기 위한 껍데기 강의이고 해당 강의 안에 STEP 1에서 추가한 강의가 모두 포함되어 있습니다.",
+    hotspot: { x: 69.3, y: 31.9, w: 7.8, h: 5 }
+  },
+  {
+    image: "screenshots/package_03.png",
+    title: "STEP 3 — 패키지강의 정보 입력",
+    instruction: "패키지 강의 정보를 등록하세요.",
+    detail: "1. 강의 만들기 화면으로 이동하면, 유형이 '패키지'로 되어있고 패키지 강의와 연결된 연결 상품이 맞는지 확인합니다. \n\n 2. 계약 정보 : CP는 기본공란으로 두되, 계약기간은 계약기간 종료일이 지나면 강의상태가 '강의종료'로 변경되므로 패키지 강의를 사용할 기간을 고려하여 세팅합니다. \n\n 3. 강의상세정보 : 패키지 강의에 어떤 강의가 포함되어 있는지 강의소개가 별도 존재하지 않으므로 강의 정보란에 강의 목록을 따로 기입하거나 별도 경로(구글 시트 or 브로셔 등)를 통해 강의 목록 전달이 필요합니다.",
+    hotspot: { x: 39.7, y: 22.7, w: 16, h: 5 }
+  },
+  {
+    image: "screenshots/package_04.png",
+    title: "STEP 4 — 패키지강의 확인",
+    instruction: "패키지 강의를 위한 상품을 확인하세요",
+    detail: "1. 강의정보를 입력한 후, 저장하면 강의 목록에 '패키지' 유형의 강의가 생성된 내용을 확인 할 수 있습니다. \n\n ⚠️ 패키지 강의는 '패키지 강의 상품 → 패키지 강의 만들기 프로세스로 생성' 되어야 하며, 일반 강의 정보 메뉴에서 강의 만들기로는'패키지 유형'이 노출되지 않습니다. \n\n 2. STEP1에서 생성한 상품을 패키지 강의로 생성하면 '패키지 강의를 위한 상품' 으로 변경됩니다. \n\n 3. 패키지 강의를 위한 상품을 만들었다면, 다음은 패키지 강의를 수강신청 받을 '수강신청상품'을 생성합니다.",
+    hotspot: { x: 30.5, y: 28, w: 5, h: 5 }
+  },
+  {
+    image: "screenshots/package_05.png",
+    title: "STEP 5 — 수강신청 상품 만들기",
+    instruction: "수강신청 받을 상품을 생성하세요.",
+    detail: "1. 수강신청을 받을 커스텀플랜 상품을 생성하며, 신청기간과 학습기간을 입력합니다. \n ⚠️ 학습기간은 STEP1에서 생성한 학습기간과 동일해야 합니다. \n 👉패키지 강의를 위한 상품은 '수강신청을 받는 상품이 아니기 때문에' 수강신청 기간을 세팅하면 자동으로 패키지 강의 만들기 버튼이 비활성화 됩니다.\n 👉수강신청에 커스텀(금액, 갯수제한 등)이 있다면 해당 상품에서 세팅을 합니다. \n\n2. 강의목록을 클릭하여, 조금전에 생성한 패키지 강의(껍데기 강의)를 강의 목록에 추가합니다.",
+    hotspot: { x: 28.9, y: 16.3, w: 4, h: 5 }
+  },
+  {
+    image: "screenshots/package_06.png",
+    title: "STEP 6 — 패키지강의 추가",
+    instruction: "패키지 강의를 수강신청 상품에 추가하세요.",
+    detail: "1. 패키지 강의 외에도 다른 일반 강의와 함께 수강신청을 받을 수 있습니다. \n ⚠️ 주의 : 다른 강의와 함께 수강신청을 받을 경우, 패키지 강의와 일반 싱글 강의의 학습기간이 모두 동일해야 합니다. \n\n 2. 강의목록에 추가된 패키지 강의명을 클릭하면, 패키지 강의 수료기준 정보를 입력할 수 있습니다.",
+    hotspot: { x: 51.5, y: 46.8, w: 18, h: 5 }
+  },
+  {
+    image: "screenshots/package_07.png",
+    title: "STEP 7 — 패키지강의 수료기준",
+    instruction: "패키지 강의의 수료기준을 입력하세요.",
+    detail: "1. 패키지강의 설정정보에서 수정버튼을 누르면, 하단에 수료기준인 수강 필요 시간을 입력할 수 있습니다. \n ⚠️ 해당 시간은 수료에 필요한 최소 수강시간이며, 실제 수강생에게 노출 및 수료 기준이 되는 시간이므로 필수로 입력합니다. 수강 시간은 패키지 강의 상품 내의 강의 수강 시간이 집계됩니다. \n\n 2. 수강 시간 입력 후 저장 버튼을 누릅니다.",
+    hotspot: { x: 22, y: 93, w: 10, h: 5 }
+  },
+  {
+    image: "screenshots/package_08.png",
+    title: "STEP 8 — 수강신청 멤버 연결",
+    instruction: "수강신청 노출을 위한 멤버를 연결하세요.",
+    detail: "1. 강의장에서 수강생이 수강신청을 할 수 있도록 멤버 추가 버튼을 눌러, 멤버 연결을 합니다. \n ⚠️ 멤버 연결은 수강신청상품에서 연결을 하며, 패키지강의를 위한 상품에는 멤버 연결을 하지 않습니다. 수강신청을 한 멤버가 해당 상품에 자동으로 연결됩니다. \n\n 2. 멤버 연결을 했다면 강의장에서 정상적으로 노출이 되는지 확인합니다.",
+    hotspot: { x: 85.8, y: 31.8, w: 5.5, h: 5 }
+  },
+  {
+    image: "screenshots/package_09.png",
+    title: "STEP 9 — 패키지 강의 강의장 확인",
+    instruction: "패키지 강의가 노출되는지 확인해주세요.",
+    detail: "1. 수강생 화면에서는 일반 싱글 강의들과 동일하게 노출 됩니다. \n\n2. 썸네일 왼쪽 상단에 '수강접수상품' 으로 노출되며, 강의를 클릭하여 정보가 올바르게 노출되는지 확인합니다.",
+    hotspot: { x: 34.5, y: 22.5, w: 14.7, h: 30 }
+  },
+  {
+    image: "screenshots/package_10.png",
+    title: "STEP 10 — 패키지강의 정보 확인",
+    instruction: "패키지 강의 정보를 확인해주세요.",
+    detail: "1. 강의정보가 없으면 빈 값으로 나오기 때문에 강의 정보를 입력하지 않고 생성했다면 백오피스 강의 관리 메뉴에서 강의 정보를 수정합니다. \n\n 2. 패키지 강의 안에 어떤 강의가 있는지 알 수 없기 때문에 패키지 강의 리스트를 안내하는 것을 권장하며, 구글시트 또는 브로셔를 통해 안내 하는 것을 추천합니다. :) \n\n 3. 강의카드 정보에 문제가 없다면 수강신청 버튼을 눌러서 신청 합니다.",
+    hotspot: { x: 65.8, y: 51.3, w: 12.2, h: 6 }
+  },
+  {
+    image: "screenshots/package_11.png",
+    title: "STEP 11 — 내 강의 화면",
+    instruction: "수강 중인 강의 카드를 클릭하세요.",
+    detail: "1. 수강신청을 하면 내 강의의 수강 중인 강의에서는 다른 싱글 강의들과 동일하게 하나의 강의 카드로 보여지며 수강진척률도 진도율이 아닌 수강시간으로 노출 됩니다. \n ⚠️ 수강시간은 총 수강시간 기준 (누적 수강 기준으로는 세팅 불가). \n\n 2. 강의 카드를 누르면 패키지 강의 정보를 확인 할 수 있습니다.",
+    hotspot: { x: 36.2, y: 22.2, w: 41, h: 14 }
+  },
+  {
+    image: "screenshots/package_12.png",
+    title: "STEP 12 — 패키지강의 리스트",
+    instruction: "패키지 강의 목록을 볼 수 있어요.",
+    detail: "1. 강의 카드를 누르면 강의 상세 화면이 아닌 제일 처음 생성했던 패키지 강의로 묶은 강의 목록 화면으로 이동 됩니다. \n\n 2. 패키지 강의가 아닌 다른 수강중인 강의는 미노출 되어 일반 싱글 강의와 패키지 구독 강의가 구분 됩니다. \n\n 3. 패키지 강의 목록에서 수강하고자 하는 강의를 자유롭게 구독하여 수강 할 수 있습니다.",
+    hotspot: { x: 21, y: 32.4, w: 14.5, h: 35 }
+  },
+  {
+    image: "screenshots/package_13.png",
+    title: "STEP 13 — 패키지강의 카드",
+    instruction: "패키지강의 수료기준은 강의 수료기준과 달라요.",
+    detail: "1. 수료 기준 시간이 충족되지 않았음에도 강의 카드에 '수료'로 표시되는 경우, 이는 상품 생성 시 설정된 진도율 기준에 따라 수료 여부가 표시된 것입니다. 해당 수료는 개별 강의 기준의 수료표기이며, 패키지 강의 전체의 수료로는 인정되지 않습니다. \n\n 2. 수료증 발급 버튼은 패키지 강의 수료 기준 시간이 충족됐을 때 활성화 되며, 관련 주의사항은 수강 정보 하단에 안내되어 있습니다. \n\n 3. 수료증은 한 번이라도 수강한 강의의 수강 정보 화면 또는 내 강의의 수강중인 강의 화면에서 수료증 발급이 가능합니다.",
+    hotspot: { x: 54.5, y: 56, w: 5, h: 5 }
+  },
+  {
+    image: "screenshots/package_14.png",
+    title: "STEP 14 — 수료증 발급",
+    instruction: "수료증은 시간으로 출력돼요",
+    detail: "1. 수료증은 수강한 강의 단위가 아닌 '패키지 강의명' 하나로 발급되며 진도율이 아닌 수강 시간이 포함되어 발급됩니다. \n\n 2. 수강시간은 분 단위까지만 노출되며, 분 단위가 0분일 경우 분은 생략됩니다. (ex. 01시간 00분 → 1시간)",
+    hotspot: { x: 44.5, y: 56.3, w: 8, h: 5 }
+  }
+];
+
+let current = parseInt(localStorage.getItem("pkg-guide-step") || "0", 10);
+if (current >= steps.length) current = 0;
+
+const $ = (id) => document.getElementById(id);
+
+function render() {
+  if (current >= steps.length) {
+    renderDone();
+    return;
+  }
+  const s = steps[current];
+  $("pkg-step-title").textContent = s.title;
+  $("pkg-step-instruction").textContent = s.instruction;
+  $("pkg-step-detail").textContent = s.detail || "";
+  $("pkg-progress-text").textContent = `${current + 1} / ${steps.length} 단계`;
+  $("pkg-progress-fill").style.width = `${((current) / steps.length) * 100}%`;
+
+  const prevBtn = $("pkg-btn-prev");
+  if (prevBtn) {
+    prevBtn.disabled = (current === 0);
+    prevBtn.style.opacity = (current === 0) ? "0.4" : "1";
+    prevBtn.style.cursor = (current === 0) ? "not-allowed" : "pointer";
+  }
+
+  document.querySelectorAll(".pkg-hotspot").forEach(el => el.remove());
+
+  const img = $("pkg-screenshot");
+  const screen = $("pkg-screen");
+  screen.style.transition = "opacity 0.15s";
+  screen.style.opacity = "0";
+
+  const show = () => {
+    const btn = document.createElement("button");
+    btn.className = "pkg-hotspot correct";
+    btn.style.left = s.hotspot.x + "%";
+    btn.style.top = s.hotspot.y + "%";
+    btn.style.width = s.hotspot.w + "%";
+    btn.style.height = s.hotspot.h + "%";
+    btn.addEventListener("click", next);
+    screen.appendChild(btn);
+    screen.style.opacity = "1";
+  };
+
+  img.onload = show;
+  img.src = s.image;
+  if (img.complete) { img.onload = null; show(); }
+
+  const btn2 = document.createElement("button");
+  btn2.className = "pkg-hotspot correct";
+  btn2.style.left = s.hotspot.x + "%";
+  btn2.style.top = s.hotspot.y + "%";
+  btn2.style.width = s.hotspot.w + "%";
+  btn2.style.height = s.hotspot.h + "%";
+  btn2.addEventListener("click", next);
+  $("pkg-screen").appendChild(btn2);
+
+  $("pkg-screenshot").onclick = (e) => {
+    showToast("그 버튼이 아니에요. 힌트를 눌러보세요!");
+    $("pkg-screen").classList.remove("pkg-shake");
+    void $("pkg-screen").offsetWidth;
+    $("pkg-screen").classList.add("pkg-shake");
+  };
+
+  localStorage.setItem("pkg-guide-step", current);
+}
+
+function renderDone() {
+  document.querySelector(".pkg-panel").innerHTML = `
+    <div class="pkg-done">
+      <h2>🎉 가이드 완료!</h2>
+      <p>잘 따라오셨습니다.</p>
+      <button class="pkg-btn pkg-btn-primary" onclick="pkgRestart()">처음부터 다시</button>
+    </div>
+  `;
+  document.querySelectorAll(".pkg-hotspot").forEach(el => el.remove());
+  $("pkg-progress-fill").style.width = "100%";
+}
+
+function next() {
+  current++;
+  render();
+}
+
+function prev() {
+  if (current > 0) {
+    current--;
+    render();
+  }
+}
+
+function restart() {
+  current = 0;
+  localStorage.removeItem("pkg-guide-step");
+  location.reload();
+}
+window.pkgRestart = restart;
+
+function showHint() {
+  const hs = document.querySelector(".pkg-hotspot.correct");
+  if (!hs) return;
+  hs.classList.add("hint");
+  setTimeout(() => hs.classList.remove("hint"), 2400);
+}
+
+function showToast(msg) {
+  const t = $("pkg-toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove("show"), 1800);
+}
+
+$("pkg-btn-hint").addEventListener("click", showHint);
+$("pkg-btn-prev").addEventListener("click", prev);
+$("pkg-btn-reset").addEventListener("click", restart);
+
+render();
+})();
+  </script>
+</body>
+</html>

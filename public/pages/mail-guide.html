@@ -1,0 +1,1655 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Web Tools - 수강안내메일 에디터</title>
+<link rel="stylesheet" href="/css/style.css">
+<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.js"></script>
+<style>
+  .mail-editor{
+    --bg:#F4F4F2;
+    --card:#FFFFFF;
+    --ink:#0E1726;
+    --ink-2:#475569;
+    --ink-3:#94A3B8;
+    --line:#E5E7EB;
+    --line-2:#F1F2F4;
+    --accent:#1E3A8A;
+    --accent-soft:#EEF2F9;
+    --warn:#92400E;
+    --warn-soft:#FEF6E4;
+    --ok:#065F46;
+  }
+  .mail-editor{
+    background:var(--bg);
+    font-family:'Pretendard','Pretendard Variable',-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sans KR','Malgun Gothic',sans-serif;
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+    padding:32px 16px 60px;
+    border-radius:20px;
+  }
+
+  /* ===== Toolbar ===== */
+  .toolbar{
+    position:sticky;
+    top:16px;
+    z-index:50;
+    max-width:680px;
+    margin:0 auto 16px;
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:10px 14px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    box-shadow:0 4px 16px rgba(14,23,38,.06);
+  }
+  .toolbar-title{
+    flex:1;
+    font-size:13px;
+    font-weight:600;
+    color:var(--ink);
+    display:flex;align-items:center;gap:8px;
+  }
+  .toolbar-title svg{flex-shrink:0}
+  .btn{
+    border:1px solid var(--line);
+    background:#fff;
+    color:var(--ink);
+    padding:8px 14px;
+    border-radius:9px;
+    font-size:12.5px;
+    font-weight:600;
+    cursor:pointer;
+    font-family:inherit;
+    transition:all .15s;
+  }
+  .btn:hover{background:#FAFAFA;border-color:#D1D5DB}
+  .btn.primary{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .btn.primary:hover{background:#1E293B}
+  .toast{
+    position:fixed;
+    left:50%;bottom:32px;
+    transform:translateX(-50%) translateY(20px);
+    background:var(--ink);
+    color:#fff;
+    padding:12px 20px;
+    border-radius:10px;
+    font-size:13px;
+    font-weight:500;
+    opacity:0;
+    pointer-events:none;
+    transition:all .3s;
+    z-index:100;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  /* ===== Email Container ===== */
+  .email{
+    max-width:640px;
+    margin:0 auto;
+    background:var(--card);
+    border-radius:18px;
+    overflow:hidden;
+    box-shadow:0 8px 32px rgba(14,23,38,.06);
+  }
+
+  /* ===== HERO (Skillflo · Geometric) ===== */
+  .hero{
+    position:relative;
+    padding:22px 32px 28px;
+    background:
+      radial-gradient(circle at 90% 30%, rgba(191,219,254,0.45) 0%, transparent 50%),
+      radial-gradient(circle at 10% 85%, rgba(224,231,255,0.35) 0%, transparent 50%),
+      linear-gradient(135deg,#FFFFFF 0%,#F8FAFC 60%,#F1F5F9 100%);
+    color:#0F172A;
+    overflow:hidden;
+    isolation:isolate;
+  }
+  .hero-deco{
+    position:absolute;
+    top:6px;right:22px;
+    width:260px;height:200px;
+    pointer-events:none;
+    z-index:0;
+  }
+  .geo{position:absolute}
+  .sf-mark,.geo-logo{object-fit:contain}
+  .geo-circle{
+    width:170px;height:170px;
+    border:2px dashed rgba(59,130,246,0.3);
+    border-radius:50%;
+    top:30px;right:30px;
+    animation:hero-rot 30s linear infinite;
+  }
+  .geo-logo{
+    width:108px;height:118px;
+    top:55px;right:60px;
+    filter:drop-shadow(0 16px 30px rgba(59,130,246,0.3));
+    animation:hero-logo-float 5s ease-in-out infinite;
+    z-index:2;
+  }
+  .geo-square{
+    width:38px;height:38px;
+    background:linear-gradient(135deg,#60A5FA,#3B82F6);
+    border-radius:9px;
+    top:15px;right:-10px;
+    box-shadow:0 8px 20px rgba(59,130,246,0.3);
+    animation:hero-rotsq 9s ease-in-out infinite;
+  }
+  .geo-tri{
+    width:0;height:0;
+    border-left:16px solid transparent;
+    border-right:16px solid transparent;
+    border-bottom:28px solid #BFDBFE;
+    bottom:30px;right:220px;
+    animation:hero-floatY 4s ease-in-out infinite;
+  }
+  .geo-ring{
+    width:48px;height:48px;
+    border:9px solid transparent;
+    border-top-color:#FBBF24;
+    border-right-color:#FBBF24;
+    border-radius:50%;
+    bottom:50px;right:8px;
+    animation:hero-rot 9s linear infinite reverse;
+  }
+  .geo-dot{
+    width:10px;height:10px;
+    background:#0F172A;
+    border-radius:50%;
+    top:165px;right:235px;
+    animation:hero-floatY 3s ease-in-out infinite;
+  }
+  @keyframes hero-rot{to{transform:rotate(360deg)}}
+  @keyframes hero-rotsq{0%,100%{transform:rotate(0deg)}50%{transform:rotate(180deg)}}
+  @keyframes hero-floatY{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+  @keyframes hero-logo-float{
+    0%,100%{transform:translateY(-6px) rotate(-6deg)}
+    50%{transform:translateY(10px) rotate(6deg)}
+  }
+  @keyframes hero-pulse-dot{0%,100%{box-shadow:0 0 0 3px rgba(16,185,129,0.2)}50%{box-shadow:0 0 0 6px rgba(16,185,129,0.1)}}
+
+  .hero-head{
+    position:relative;
+    z-index:2;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:18px;
+  }
+  .sf-logo{display:flex;align-items:center;gap:10px}
+  .sf-mark{width:32px;height:35px;flex-shrink:0}
+  .sf-name{
+    font-size:19px;font-weight:800;letter-spacing:-.02em;
+    color:#0F172A;
+  }
+  .sf-divider{
+    width:1px;height:18px;background:#CBD5E1;
+  }
+  .sf-eyebrow{
+    font-size:12px;font-weight:700;letter-spacing:.14em;
+    color:#64748B;
+  }
+  .hero-content{
+    position:relative;
+    z-index:1;
+    max-width:62%;
+  }
+  .hero-title{
+    font-size:26px;font-weight:800;
+    line-height:1.3;letter-spacing:-.02em;
+    color:#0F172A;
+    margin:0;
+  }
+  .hero-title b{color:#3B82F6;font-weight:800}
+  .hero-meta{
+    margin-top:12px;
+    display:inline-flex;
+    align-items:center;
+    gap:9px;
+    padding:10px 18px;
+    background:rgba(59,130,246,0.1);
+    color:#1D4ED8;
+    border-radius:999px;
+    font-size:15.5px;
+    font-weight:700;
+    letter-spacing:-.005em;
+  }
+  .hero-meta .dot{
+    width:6px;height:6px;border-radius:50%;background:#10B981;
+    box-shadow:0 0 0 3.5px rgba(16,185,129,0.2);
+    animation:hero-pulse-dot 2s ease-in-out infinite;
+  }
+
+  /* ===== Greeting ===== */
+  .greeting{
+    padding:18px 32px 16px;
+    border-bottom:1px solid var(--line);
+  }
+  .greeting-eyebrow{
+    font-size:10.5px;
+    font-weight:700;
+    letter-spacing:.14em;
+    color:var(--accent);
+    margin-bottom:6px;
+  }
+  .greeting-text{
+    font-size:14px;
+    line-height:1.65;
+    color:var(--ink);
+  }
+  .greeting-text b{font-weight:700}
+  .greeting-text .from{
+    display:inline-block;
+    padding:2px 8px;
+    background:var(--accent-soft);
+    color:var(--accent);
+    font-size:12.5px;
+    font-weight:700;
+    border-radius:5px;
+    margin:0 2px;
+    letter-spacing:-.005em;
+  }
+
+  /* ===== Section ===== */
+  .section{
+    padding:20px 32px;
+    border-bottom:1px solid var(--line);
+  }
+  .section:last-of-type{border-bottom:none}
+  .section-head{
+    display:flex;
+    align-items:center;
+    gap:9px;
+    margin-bottom:4px;
+  }
+  .section-num{
+    display:inline-block;
+    flex-shrink:0;
+    font-size:10.5px;
+    font-weight:700;
+    letter-spacing:.1em;
+    color:var(--accent);
+    background:var(--accent-soft);
+    padding:3px 7px;
+    border-radius:5px;
+  }
+  .section-title{
+    font-size:17px;
+    font-weight:800;
+    letter-spacing:-.02em;
+    line-height:1.35;
+    margin:0;
+  }
+  .section-desc{
+    font-size:12.5px;
+    color:var(--ink-2);
+    line-height:1.55;
+    margin:0 0 12px;
+  }
+  .section-body{margin-top:2px}
+
+  /* ===== Info Card (수강 정보) ===== */
+  .info-card{
+    border:1px solid var(--line);
+    border-radius:14px;
+    overflow:hidden;
+  }
+  .info-row{
+    position:relative;
+    display:flex;
+    padding:11px 18px;
+    border-bottom:1px solid var(--line-2);
+    gap:14px;
+    align-items:flex-start;
+  }
+  .info-row:last-child{border-bottom:none}
+  .info-row-label{
+    display:flex;align-items:center;gap:8px;
+    flex-shrink:0;
+    width:110px;
+    font-size:12.5px;
+    font-weight:600;
+    color:var(--ink-2);
+    letter-spacing:-.005em;
+    padding-top:1px;
+  }
+  .info-row-label svg{color:var(--ink-3);flex-shrink:0}
+  .info-row-label-text{
+    flex:1;
+    min-width:0;
+  }
+  .info-row-value{
+    flex:1;
+    font-size:13.5px;
+    font-weight:700;
+    color:var(--ink);
+    line-height:1.55;
+    letter-spacing:-.005em;
+  }
+  .info-row-value.accent{color:var(--accent)}
+  .info-row-value .sub{
+    display:block;
+    font-size:12px;
+    font-weight:500;
+    color:var(--ink-2);
+    margin-top:4px;
+    line-height:1.55;
+  }
+  /* Editor-only controls (드래그 + 제거 + 추가) */
+  .row-drag{
+    position:absolute;
+    left:4px;
+    top:50%;
+    transform:translateY(-50%);
+    width:14px;height:22px;
+    display:flex;align-items:center;justify-content:center;
+    background:none;
+    border:none;
+    color:var(--ink-3);
+    cursor:grab;
+    opacity:0;
+    transition:opacity .15s;
+    padding:0;
+    font-family:inherit;
+  }
+  .info-row:hover .row-drag{opacity:.5}
+  .row-drag:hover{opacity:1}
+  .row-drag:active{cursor:grabbing}
+  .info-row.dragging{opacity:.35;background:#FAFBFC}
+  .info-row.drag-over-top{box-shadow:inset 0 2px 0 var(--accent)}
+  .info-row.drag-over-bottom{box-shadow:inset 0 -2px 0 var(--accent)}
+  .row-del{
+    position:absolute;
+    top:8px;right:8px;
+    width:22px;height:22px;
+    border-radius:6px;
+    border:1px solid var(--line);
+    background:#fff;
+    color:var(--ink-3);
+    font-size:14px;line-height:1;
+    cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    opacity:0;
+    transition:all .15s;
+    padding:0;
+    font-family:inherit;
+  }
+  .info-row:hover .row-del{opacity:1}
+  .row-del:hover{border-color:#EF4444;color:#EF4444;background:#FEF2F2}
+  .row-add{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+    width:100%;
+    margin-top:8px;
+    padding:10px;
+    background:#fff;
+    border:1px dashed var(--line);
+    border-radius:10px;
+    color:var(--ink-2);
+    font-size:12.5px;
+    font-weight:600;
+    cursor:pointer;
+    font-family:inherit;
+    transition:all .15s;
+  }
+  .row-add:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+
+  /* ===== Note List ===== */
+  .note-list{
+    margin:12px 0 0;
+    padding:10px 14px;
+    background:var(--warn-soft);
+    border-radius:8px;
+  }
+  .note-list-item{
+    display:flex;
+    align-items:flex-start;
+    gap:8px;
+    font-size:12px;
+    color:var(--warn);
+    line-height:1.65;
+  }
+  .note-list-item + .note-list-item{margin-top:4px}
+  .note-list-item::before{
+    content:'';
+    flex-shrink:0;
+    width:3px;height:3px;border-radius:50%;
+    background:currentColor;
+    margin-top:9px;
+  }
+  .note-list-item-text{flex:1}
+  .note-del{
+    flex-shrink:0;
+    opacity:0;
+    border:1px solid var(--line);
+    background:#fff;
+    color:var(--ink-3);
+    width:18px;height:18px;
+    border-radius:5px;
+    font-size:11px;
+    line-height:1;
+    cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    transition:all .15s;
+    padding:0;
+    font-family:inherit;
+    margin-top:2px;
+  }
+  .note-list-item:hover .note-del{opacity:1}
+  .note-del:hover{border-color:#EF4444;color:#EF4444;background:#FEF2F2}
+
+  /* ===== 강의장 접속 박스 ===== */
+  .access-box{
+    border:1.5px solid var(--ink);
+    border-radius:12px;
+    padding:14px;
+    background:#FAFBFC;
+  }
+  .access-url-wrap{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:10px 14px;
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:9px;
+    margin-bottom:10px;
+  }
+  .access-url-wrap svg{color:var(--ink-3);flex-shrink:0}
+  .access-url{
+    flex:1;
+    font-size:13.5px;
+    font-weight:700;
+    color:var(--ink);
+    word-break:break-all;
+    font-family:'SF Mono',Consolas,Menlo,monospace;
+    letter-spacing:-.01em;
+  }
+  .access-cta{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    width:100%;
+    padding:13px;
+    background:var(--ink);
+    color:#fff;
+    text-decoration:none;
+    border-radius:9px;
+    font-size:14px;
+    font-weight:700;
+    letter-spacing:-.005em;
+    transition:background .15s;
+  }
+  .access-cta:hover{background:#1E293B}
+
+  /* ===== Login Info Grid ===== */
+  .login-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+    margin-bottom:14px;
+  }
+  .login-box{
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:12px 14px;
+    background:#FAFBFC;
+  }
+  .login-label{
+    display:flex;align-items:center;gap:6px;
+    font-size:11.5px;
+    font-weight:700;
+    letter-spacing:.06em;
+    color:var(--ink-2);
+    margin-bottom:8px;
+  }
+  .login-label svg{color:var(--ink-3)}
+  .login-value{
+    font-size:13.5px;
+    font-weight:700;
+    color:var(--ink);
+    word-break:break-all;
+    line-height:1.5;
+    letter-spacing:-.005em;
+  }
+  .login-value.muted{color:var(--ink-2);font-weight:500;font-size:12.5px;line-height:1.55}
+  .login-badge{
+    display:inline-block;
+    font-size:10px;
+    font-weight:700;
+    padding:2px 7px;
+    background:var(--warn-soft);
+    color:var(--warn);
+    border-radius:5px;
+    margin-left:4px;
+    letter-spacing:.02em;
+    vertical-align:middle;
+  }
+
+  /* ===== Steps ===== */
+  .steps-title{
+    font-size:12.5px;
+    font-weight:700;
+    color:var(--ink);
+    margin-bottom:8px;
+    letter-spacing:-.005em;
+  }
+  .steps{
+    display:grid;
+    gap:6px;
+  }
+  .step{
+    display:flex;
+    gap:10px;
+    padding:9px 13px;
+    border:1px solid var(--line);
+    border-radius:9px;
+    background:#fff;
+    align-items:center;
+  }
+  .step-num{
+    display:inline-block;
+    flex-shrink:0;
+    background:var(--accent);
+    color:#fff;
+    font-size:10px;
+    font-weight:700;
+    padding:2px 6px;
+    border-radius:4px;
+  }
+  .step-text{
+    flex:1;
+    font-size:12.5px;
+    font-weight:600;
+    color:var(--ink);
+    line-height:1.45;
+    letter-spacing:-.005em;
+  }
+
+  /* ===== Guide Section ===== */
+  .guide-card{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    padding:14px 16px;
+    border:1px solid var(--line);
+    border-radius:12px;
+    background:linear-gradient(135deg,#FAFBFC 0%,#F4F6F9 100%);
+  }
+  .guide-icon{
+    flex-shrink:0;
+    width:38px;height:38px;
+    border-radius:10px;
+    background:var(--ink);
+    color:#fff;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .guide-content{flex:1}
+  .guide-title{
+    font-size:13.5px;
+    font-weight:700;
+    color:var(--ink);
+    line-height:1.4;
+    margin-bottom:2px;
+    letter-spacing:-.005em;
+  }
+  .guide-desc{
+    font-size:11.5px;
+    color:var(--ink-2);
+    line-height:1.5;
+  }
+  .guide-btn{
+    flex-shrink:0;
+    display:flex;
+    align-items:center;
+    gap:5px;
+    padding:7px 12px;
+    background:#fff;
+    color:var(--ink);
+    border:1px solid var(--line);
+    border-radius:8px;
+    font-size:12px;
+    font-weight:700;
+    text-decoration:none;
+    letter-spacing:-.005em;
+    transition:all .15s;
+  }
+  .guide-btn:hover{border-color:var(--ink)}
+
+  /* ===== Contact Section ===== */
+  .contact-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+  }
+  .contact-box.full{grid-column:span 2}
+  .contact-box{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:12px 14px;
+    border:1px solid var(--line);
+    border-radius:10px;
+    text-decoration:none;
+    color:var(--ink);
+    transition:all .15s;
+  }
+  .contact-box:hover{border-color:var(--ink);background:#FAFBFC}
+  .contact-icon{
+    flex-shrink:0;
+    width:30px;height:30px;
+    border-radius:8px;
+    background:var(--accent-soft);
+    color:var(--accent);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .contact-content{flex:1;min-width:0}
+  .contact-label{
+    font-size:10.5px;
+    font-weight:600;
+    color:var(--ink-3);
+    letter-spacing:.04em;
+    margin-bottom:1px;
+  }
+  .contact-value{
+    font-size:12.5px;
+    font-weight:700;
+    color:var(--ink);
+    letter-spacing:-.005em;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+
+  /* ===== Footer ===== */
+  .footer{
+    padding:16px 32px;
+    background:#F8FAFC;
+    color:#64748B;
+    font-size:11px;
+    text-align:center;
+    line-height:1.6;
+    border-top:1px solid #E5E7EB;
+  }
+  .footer-brand{
+    color:#0F172A;
+    font-weight:700;
+    margin-bottom:3px;
+    font-size:12px;
+    letter-spacing:-.005em;
+  }
+  .footer a{color:#3B82F6;text-decoration:underline}
+  .footer-divider{
+    height:1px;background:#E5E7EB;
+    margin:8px auto;max-width:60px;
+  }
+  .footer-note{
+    font-size:10px;
+    color:#94A3B8;
+  }
+
+  /* ===== Editable highlight ===== */
+  [contenteditable="true"]{
+    outline:none;
+    border-radius:3px;
+    transition:background .15s;
+  }
+  [contenteditable="true"]:hover{background:rgba(30,58,138,.06)}
+  [contenteditable="true"]:focus{
+    background:rgba(30,58,138,.08);
+    box-shadow:0 0 0 2px rgba(30,58,138,.2);
+  }
+
+  @media (max-width:640px){
+    .mail-editor{padding-left:12px;padding-right:12px}
+    .hero,.greeting,.section,.footer{padding-left:22px;padding-right:22px}
+    .hero{padding-top:22px;padding-bottom:44px}
+    .hero-head{margin-bottom:30px;gap:8px;flex-wrap:wrap}
+    .sf-logo{gap:7px}
+    .sf-mark{width:26px;height:28px}
+    .sf-name{font-size:16px}
+    .sf-divider{height:14px}
+    .sf-eyebrow{font-size:10px;letter-spacing:.08em}
+    .hero-deco{
+      width:195px;height:175px;
+      top:auto;bottom:-5px;right:0;
+      opacity:0.85;
+    }
+    .geo-circle{width:120px;height:120px;top:20px;right:20px}
+    .geo-logo{width:72px;height:80px;top:42px;right:44px}
+    .geo-square{width:28px;height:28px;top:6px;right:12px}
+    .geo-ring{width:34px;height:34px;border-width:6px;bottom:32px;right:18px}
+    .geo-tri{border-left-width:12px;border-right-width:12px;border-bottom-width:22px;right:145px;bottom:24px}
+    .geo-dot{display:none}
+    .hero-content{max-width:100%}
+    .hero-title{font-size:22px}
+    .hero-meta{font-size:13px;padding:8px 14px}
+    .login-grid,.contact-grid{grid-template-columns:1fr}
+    .info-row{flex-direction:column;gap:6px}
+    .info-row-label{width:auto}
+    .guide-card{flex-direction:column;text-align:center;align-items:center}
+  }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <button id="sidebarToggle" aria-label="메뉴">☰</button>
+    <button id="themeToggle" aria-label="테마">🌙</button>
+  </div>
+  <aside class="sidebar">
+    <h1>Web Tools</h1>
+    <nav>
+      <a href="/">홈</a>
+      <a href="/pages/lecture-info.html">강의 정보 정리</a>
+      <a href="/pages/recommend.html">강의 추천</a>
+      <a href="/pages/catalog.html">과정 리스트</a>
+      <a href="/pages/categorize.html">카테고리 자동 분류</a>
+      <a href="/pages/result-report.html">결과 보고서</a>
+      <a href="/pages/enrollment-report.html">수강 리포트</a>
+      <a href="/pages/mail-guide.html" class="active">수강안내메일 에디터</a>
+      <a href="/pages/mail-encourage.html">독려메일 에디터</a>
+      <a href="/pages/package-guide.html">패키지강의 생성 가이드</a>
+      <a href="/pages/guide-public.html">가이드센터</a>
+      <a href="/pages/guide-admin.html">가이드센터 관리자</a>
+      <a href="/pages/settlement-dashboard.html">정산 대시보드</a>
+      <a href="/pages/settlement-providers.html">CP사 관리</a>
+      <a href="/pages/settlement-contracts.html">계약 관리</a>
+      <a href="/pages/settlement-products.html">상품 관리</a>
+      <a href="/pages/settlement-revenues.html">매출 관리</a>
+      <a href="/pages/settlement-import.html">CSV Import</a>
+      <a href="/pages/settlement-settlements.html">정산</a>
+      <a href="/pages/settlement-users.html">정산 시스템 사용자</a>
+      <a href="/pages/members.html">구성원 다운로드</a>
+      <a href="/pages/company-list.html">기업 리스트</a>
+      <a href="/pages/company-dashboard.html">기업 현황 대시보드</a>
+      <a href="/pages/doc-logs.html">매뉴얼 접속 로그</a>
+    </nav>
+  </aside>
+
+  <main class="main">
+  <div class="mail-editor">
+
+<div class="toolbar">
+  <div class="toolbar-title">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+    수강 안내 메일 에디터
+  </div>
+  <button class="btn" onclick="if(confirm('모든 편집 내용이 초기화됩니다. 계속하시겠습니까?')) location.reload()">초기화</button>
+  <button class="btn" onclick="toggleVars()">변수 표시</button>
+  <button class="btn" id="gifBtn" onclick="saveHeroGIF()">배너 GIF 저장</button>
+  <input id="bannerGifUrl" type="url" value="https://cdn.day1company.io/prod/uploads/202606/152018-1910/2026-06-02142137-ezgif.com-video-to-gif-converter.gif" title="GIF 업로드 후 URL 붙여넣기 → HTML 복사에 반영됨" style="border:1px solid var(--line);border-radius:9px;padding:7px 12px;font-size:12px;font-family:inherit;color:var(--ink);width:200px;outline:none;">
+  <button class="btn primary" onclick="copyHTML()">HTML 복사</button>
+</div>
+
+<div class="email" id="email">
+
+  <!-- ============ HERO (Skillflo · Geometric) ============ -->
+  <div class="hero">
+    <div class="hero-deco">
+      <div class="geo geo-circle"></div>
+      <div class="geo geo-tri"></div>
+      <div class="geo geo-square"></div>
+      <div class="geo geo-ring"></div>
+      <div class="geo geo-dot"></div>
+      <img class="geo geo-logo" src="https://skillflo-mail.vercel.app/skillflo_logo.png" alt="">
+    </div>
+    <div class="hero-head">
+      <div class="sf-logo">
+        <img class="sf-mark" src="https://skillflo-mail.vercel.app/skillflo_logo.png" alt="skillflo">
+        <span class="sf-name">skillflo</span>
+      </div>
+      <div class="sf-divider"></div>
+      <div class="sf-eyebrow" contenteditable="true">FASTCAMPUS ENTERPRISE</div>
+    </div>
+    <div class="hero-content">
+      <h1 class="hero-title" contenteditable="true">새로운 학습이<br><b>시작되었습니다</b></h1>
+      <div class="hero-meta">
+        <span class="dot"></span>
+        <span contenteditable="true">수강 시작 안내</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 1. 인사말 ============ -->
+  <div class="greeting">
+    <div class="greeting-eyebrow">FROM</div>
+    <p class="greeting-text" contenteditable="true">
+      안녕하세요, <b>${memberName}</b>님. <span class="from">패스트캠퍼스 기업교육팀</span> 입니다.<br>
+      신청해주신 <b>온라인 콘텐츠 수강 기간이 시작</b>되어 안내드립니다. 아래 정보를 확인하시고 학습을 시작해 주세요.
+    </p>
+  </div>
+
+  <!-- ============ 2. 수강 정보 ============ -->
+  <div class="section">
+    <div class="section-head">
+      <span class="section-num">01</span>
+      <h2 class="section-title" contenteditable="true">수강 정보</h2>
+    </div>
+    <div class="section-body">
+      <div class="info-card" id="infoCard">
+        <div class="info-row">
+          <div class="info-row-label" data-icon="book">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+            <span class="info-row-label-text" contenteditable="true">필수 강의</span>
+          </div>
+          <div class="info-row-value accent" contenteditable="true">${requiredCoursePublicNames}</div>
+          <button class="row-drag" title="드래그하여 순서 변경" aria-label="드래그 핸들"><svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor"><circle cx="2.5" cy="2.5" r="1"/><circle cx="7.5" cy="2.5" r="1"/><circle cx="2.5" cy="7" r="1"/><circle cx="7.5" cy="7" r="1"/><circle cx="2.5" cy="11.5" r="1"/><circle cx="7.5" cy="11.5" r="1"/></svg></button>
+          <button class="row-del" title="이 행 삭제" onclick="delRow(this)">×</button>
+        </div>
+        <div class="info-row">
+          <div class="info-row-label" data-icon="calendar">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+            <span class="info-row-label-text" contenteditable="true">필수 학습 기간</span>
+          </div>
+          <div class="info-row-value" contenteditable="true">${courseStartedAt} ~ ${courseEndedAt}</div>
+          <button class="row-drag" title="드래그하여 순서 변경" aria-label="드래그 핸들"><svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor"><circle cx="2.5" cy="2.5" r="1"/><circle cx="7.5" cy="2.5" r="1"/><circle cx="2.5" cy="7" r="1"/><circle cx="7.5" cy="7" r="1"/><circle cx="2.5" cy="11.5" r="1"/><circle cx="7.5" cy="11.5" r="1"/></svg></button>
+          <button class="row-del" title="이 행 삭제" onclick="delRow(this)">×</button>
+        </div>
+        <div class="info-row">
+          <div class="info-row-label" data-icon="refresh">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9"/><path d="M3 4v5h5"/></svg>
+            <span class="info-row-label-text" contenteditable="true">복습 기간</span>
+          </div>
+          <div class="info-row-value" contenteditable="true">${requiredCourseStartedAt} ~ ${requiredCourseEndedAt}<span class="sub">필수 학습 기간 종료 후 자유롭게 수강 가능</span></div>
+          <button class="row-drag" title="드래그하여 순서 변경" aria-label="드래그 핸들"><svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor"><circle cx="2.5" cy="2.5" r="1"/><circle cx="7.5" cy="2.5" r="1"/><circle cx="2.5" cy="7" r="1"/><circle cx="7.5" cy="7" r="1"/><circle cx="2.5" cy="11.5" r="1"/><circle cx="7.5" cy="11.5" r="1"/></svg></button>
+          <button class="row-del" title="이 행 삭제" onclick="delRow(this)">×</button>
+        </div>
+        <div class="info-row">
+          <div class="info-row-label" data-icon="check">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 11 3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+            <span class="info-row-label-text" contenteditable="true">수료 기준</span>
+          </div>
+          <div class="info-row-value" contenteditable="true">${customMessage}</div>
+          <button class="row-drag" title="드래그하여 순서 변경" aria-label="드래그 핸들"><svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor"><circle cx="2.5" cy="2.5" r="1"/><circle cx="7.5" cy="2.5" r="1"/><circle cx="2.5" cy="7" r="1"/><circle cx="7.5" cy="7" r="1"/><circle cx="2.5" cy="11.5" r="1"/><circle cx="7.5" cy="11.5" r="1"/></svg></button>
+          <button class="row-del" title="이 행 삭제" onclick="delRow(this)">×</button>
+        </div>
+      </div>
+      <button class="row-add" onclick="addRow()">＋ 항목 추가</button>
+      <div class="note-list">
+        <div class="note-list-item">
+          <span class="note-list-item-text" contenteditable="true">필수 학습 기간이 종료되더라도 복습 기간 내 자유롭게 수강 가능합니다.</span>
+          <button class="note-del" onclick="delNote(this)" title="이 항목 삭제">×</button>
+        </div>
+        <div class="note-list-item">
+          <span class="note-list-item-text" contenteditable="true">추가 입과하신 경우 학습 시작일이 상이할 수 있습니다.</span>
+          <button class="note-del" onclick="delNote(this)" title="이 항목 삭제">×</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 3. 강의장 접속 ============ -->
+  <div class="section">
+    <div class="section-head">
+      <span class="section-num">02</span>
+      <h2 class="section-title" contenteditable="true">강의장 접속</h2>
+    </div>
+    <div class="section-body">
+      <div class="access-box">
+        <div class="access-url-wrap">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          <span class="access-url" contenteditable="true">https://skillflo.io</span>
+        </div>
+        <a href="https://skillflo.io/" target="_blank" class="access-cta">
+          <span contenteditable="true">강의장 바로가기</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M7 7h10v10"/></svg>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 4. 로그인 정보 ============ -->
+  <div class="section">
+    <div class="section-head">
+      <span class="section-num">03</span>
+      <h2 class="section-title" contenteditable="true">로그인 정보</h2>
+    </div>
+    <p class="section-desc" contenteditable="true">처음 접속 시 비밀번호 설정이 필요합니다.</p>
+    <div class="section-body">
+
+      <div class="login-grid">
+        <div class="login-box">
+          <div class="login-label">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Z"/><path d="m22 7-10 5L2 7"/></svg>
+            아이디
+          </div>
+          <div class="login-value" contenteditable="true">${email}</div>
+          <div class="login-value muted" style="margin-top:4px;font-size:11px" contenteditable="true">본 메일을 받은 이메일 주소</div>
+        </div>
+        <div class="login-box">
+          <div class="login-label">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            비밀번호 <span class="login-badge">최초 설정</span>
+          </div>
+          <div class="login-value muted" contenteditable="true">최초 로그인 시 본인이 직접 설정</div>
+        </div>
+      </div>
+
+      <div class="steps-title" contenteditable="true">최초 로그인 절차</div>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-text" contenteditable="true">강의장(skillflo.io) 접속</div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-text" contenteditable="true">본인 이메일 계정 입력</div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-text" contenteditable="true">이메일 또는 휴대폰 번호로 본인 인증</div>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-text" contenteditable="true">비밀번호 설정 후 로그인 완료</div>
+        </div>
+      </div>
+
+      <div class="note-list">
+        <div class="note-list-item">
+          <span class="note-list-item-text" contenteditable="true">기존 회원은 본인이 설정한 비밀번호 입력 후 바로 로그인 가능합니다.</span>
+          <button class="note-del" onclick="delNote(this)" title="이 항목 삭제">×</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 5. 수강 가이드 ============ -->
+  <div class="section">
+    <div class="section-head">
+      <span class="section-num">04</span>
+      <h2 class="section-title" contenteditable="true">수강 가이드</h2>
+    </div>
+    <div class="section-body">
+      <div class="guide-card">
+        <div class="guide-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        </div>
+        <div class="guide-content">
+          <div class="guide-title" contenteditable="true">수강 가이드 자세히 보기</div>
+          <div class="guide-desc" contenteditable="true">학습 방법, 진도 확인, 수료증 발급 등 안내</div>
+        </div>
+        <a href="https://docs.channel.io/de98fbdf/ko" target="_blank" class="guide-btn">
+          <span contenteditable="true">바로가기</span>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 6. 문의처 ============ -->
+  <div class="section">
+    <div class="section-head">
+      <span class="section-num">05</span>
+      <h2 class="section-title" contenteditable="true">문의처</h2>
+    </div>
+    <div class="section-body">
+      <div class="contact-grid">
+        <a href="https://skillflo.channel.io/workflows/102976" target="_blank" class="contact-box full">
+          <div class="contact-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+          </div>
+          <div class="contact-content">
+            <div class="contact-label">채널톡</div>
+            <div class="contact-value" contenteditable="true">실시간 상담</div>
+          </div>
+        </a>
+        <a href="mailto:help.b2b@day1company.co.kr" class="contact-box">
+          <div class="contact-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Z"/><path d="m22 7-10 5L2 7"/></svg>
+          </div>
+          <div class="contact-content">
+            <div class="contact-label">이메일</div>
+            <div class="contact-value" contenteditable="true">help.b2b@day1company.co.kr</div>
+          </div>
+        </a>
+        <a href="tel:02-508-0341" class="contact-box">
+          <div class="contact-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          </div>
+          <div class="contact-content">
+            <div class="contact-label">전화</div>
+            <div class="contact-value" contenteditable="true">02-508-0341</div>
+          </div>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ FOOTER ============ -->
+  <div class="footer">
+    <div class="footer-brand" contenteditable="true">패스트캠퍼스 기업교육</div>
+    <div contenteditable="true">서울특별시 강남구 테헤란로 231 센터필드 West 6층</div>
+    <div class="footer-divider"></div>
+    <div class="footer-note" contenteditable="true">본 메일은 패스트캠퍼스의 온라인 콘텐츠를 수강하시는 분들께 발송되었습니다.</div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast">HTML이 클립보드에 복사되었습니다</div>
+
+  </div>
+  </main>
+
+  <script src="/js/layout.js"></script>
+<script>
+let varsVisible = true;
+
+function toggleVars(){
+  varsVisible = !varsVisible;
+  const email = document.getElementById('email');
+  if(!varsVisible){
+    email.querySelectorAll('[contenteditable]').forEach(el => {
+      el.dataset.original = el.dataset.original || el.innerHTML;
+      let html = el.innerHTML;
+      html = html.replace(/\$\{memberName\}/g, '홍길동');
+      html = html.replace(/\$\{requiredCoursePublicNames\}/g, 'AI 리터러시 입문 · 데이터로 일하는 법 · 비즈니스 영어 회화');
+      html = html.replace(/\$\{courseStartedAt\}/g, '2026.05.21');
+      html = html.replace(/\$\{courseEndedAt\}/g, '2026.07.20');
+      html = html.replace(/\$\{requiredCourseStartedAt\}/g, '2026.07.21');
+      html = html.replace(/\$\{requiredCourseEndedAt\}/g, '2026.09.20');
+      html = html.replace(/\$\{customMessage\}/g, '필수 강의 100% 수강 완료');
+      html = html.replace(/\$\{email\}/g, 'hong.gildong@company.co.kr');
+      el.innerHTML = html;
+    });
+  } else {
+    email.querySelectorAll('[contenteditable]').forEach(el => {
+      if(el.dataset.original){
+        el.innerHTML = el.dataset.original;
+        delete el.dataset.original;
+      }
+    });
+  }
+}
+
+function delRow(btn){
+  const row = btn.closest('.info-row');
+  if(!row) return;
+  const card = row.parentElement;
+  if(card.querySelectorAll('.info-row').length <= 1){
+    alert('최소 1개 행은 남겨야 합니다.');
+    return;
+  }
+  row.remove();
+}
+
+function delNote(btn){
+  btn.closest('.note-list-item').remove();
+}
+
+const DRAG_HANDLE_HTML = '<button class="row-drag" title="드래그하여 순서 변경" aria-label="드래그 핸들"><svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor"><circle cx="2.5" cy="2.5" r="1"/><circle cx="7.5" cy="2.5" r="1"/><circle cx="2.5" cy="7" r="1"/><circle cx="7.5" cy="7" r="1"/><circle cx="2.5" cy="11.5" r="1"/><circle cx="7.5" cy="11.5" r="1"/></svg></button>';
+
+function addRow(){
+  const card = document.getElementById('infoCard');
+  const row = document.createElement('div');
+  row.className = 'info-row';
+  row.innerHTML = `
+    <div class="info-row-label">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>
+      <span class="info-row-label-text" contenteditable="true">새 항목</span>
+    </div>
+    <div class="info-row-value" contenteditable="true">내용을 입력하세요</div>
+    ${DRAG_HANDLE_HTML}
+    <button class="row-del" title="이 행 삭제" onclick="delRow(this)">×</button>
+  `;
+  card.appendChild(row);
+  setupDrag(row);
+  row.querySelector('.info-row-label-text').focus();
+}
+
+let dragSrc = null;
+function setupDrag(row){
+  const handle = row.querySelector('.row-drag');
+  if(!handle) return;
+  handle.addEventListener('mousedown', () => { row.draggable = true; });
+  handle.addEventListener('mouseup', () => { row.draggable = false; });
+  row.addEventListener('dragstart', (e) => {
+    dragSrc = row;
+    setTimeout(() => row.classList.add('dragging'), 0);
+    e.dataTransfer.effectAllowed = 'move';
+    try { e.dataTransfer.setData('text/plain', ''); } catch(_) {}
+  });
+  row.addEventListener('dragend', () => {
+    row.classList.remove('dragging');
+    row.draggable = false;
+    document.querySelectorAll('.info-row').forEach(r => {
+      r.classList.remove('drag-over-top','drag-over-bottom');
+    });
+    dragSrc = null;
+  });
+  row.addEventListener('dragover', (e) => {
+    if(!dragSrc || dragSrc === row) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    const rect = row.getBoundingClientRect();
+    const above = e.clientY < rect.top + rect.height / 2;
+    row.classList.toggle('drag-over-top', above);
+    row.classList.toggle('drag-over-bottom', !above);
+  });
+  row.addEventListener('dragleave', () => {
+    row.classList.remove('drag-over-top','drag-over-bottom');
+  });
+  row.addEventListener('drop', (e) => {
+    e.preventDefault();
+    if(!dragSrc || dragSrc === row){
+      row.classList.remove('drag-over-top','drag-over-bottom');
+      return;
+    }
+    const card = row.parentElement;
+    const rect = row.getBoundingClientRect();
+    const above = e.clientY < rect.top + rect.height / 2;
+    card.insertBefore(dragSrc, above ? row : row.nextSibling);
+    row.classList.remove('drag-over-top','drag-over-bottom');
+  });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('#infoCard .info-row').forEach(setupDrag);
+});
+
+function copyHTML(){
+  const wasShowingDummy = !varsVisible;
+  if(wasShowingDummy) toggleVars();
+
+  const AC='#1E3A8A',ACS='#EEF2F9',INK='#0E1726',INK2='#475569',INK3='#94A3B8',
+        LINE='#E5E7EB',WARN='#92400E',WARNS='#FEF6E4',W='#FFFFFF',BG='#F4F4F2',
+        LOGO='https://skillflo-mail.vercel.app/skillflo_logo.png',
+        ICONS='https://skillflo-mail.vercel.app/icons',
+        F='-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",sans-serif';
+
+  // ── 값 읽기 ──
+  const eyebrow   = document.querySelector('.sf-eyebrow')?.textContent.trim()||'FASTCAMPUS ENTERPRISE';
+  const heroTitle = document.querySelector('.hero-title')?.textContent.replace(/\s+/g,' ').trim()||'새로운 학습이 시작되었습니다';
+  const heroMeta  = document.querySelector('.hero-meta span:last-child')?.textContent.trim()||'수강 시작 안내';
+  const greeting  = document.querySelector('.greeting-text')?.innerHTML
+    .replace(/<span class="from">/g,`<span style="display:inline-block;padding:2px 8px;background:${ACS};color:${AC};font-size:12px;font-weight:700;border-radius:4px;margin:0 2px;">`)
+    .trim()||'';
+  const sections  = document.querySelectorAll('.section');
+
+  // 수강 정보
+  const infoRows=[];
+  document.querySelectorAll('#infoCard .info-row').forEach(r=>{
+    const label=r.querySelector('.info-row-label-text')?.textContent.trim()||'';
+    const vEl=r.querySelector('.info-row-value');
+    const isAc=vEl?.classList.contains('accent')||false;
+    const vc=vEl?.cloneNode(true); vc?.querySelector('.sub')?.remove();
+    const sub=vEl?.querySelector('.sub')?.textContent.trim()||'';
+    const iconName=r.querySelector('.info-row-label')?.dataset.icon||'';
+    infoRows.push({label, val:vc?.innerHTML.trim()||'', sub, isAc, iconName});
+  });
+  const infoNotes=[];
+  sections[0]?.querySelectorAll('.note-list-item-text').forEach(e=>infoNotes.push(e.textContent.trim()));
+
+  // 강의장
+  const s01title=sections[0]?.querySelector('.section-title')?.textContent.trim()||'수강 정보';
+  const s02title=sections[1]?.querySelector('.section-title')?.textContent.trim()||'강의장 접속';
+  const accessUrl=document.querySelector('.access-url')?.textContent.trim()||'https://skillflo.io';
+  const accessHref=document.querySelector('.access-cta')?.getAttribute('href')||accessUrl;
+  const accessCta=document.querySelector('.access-cta span')?.textContent.trim()||'강의장 바로가기';
+
+  // 로그인
+  const s03title=sections[2]?.querySelector('.section-title')?.textContent.trim()||'로그인 정보';
+  const secDesc=document.querySelector('.section-desc')?.textContent.trim()||'';
+  const lbs=document.querySelectorAll('.login-box');
+  const lid=lbs[0]?.querySelectorAll('.login-value')[0]?.innerHTML||'';
+  const lidn=lbs[0]?.querySelectorAll('.login-value')[1]?.textContent.trim()||'';
+  const lpw=lbs[1]?.querySelector('.login-value')?.textContent.trim()||'';
+  const lbadge=lbs[1]?.querySelector('.login-badge')?.textContent.trim()||'';
+  const stitle=document.querySelector('.steps-title')?.textContent.trim()||'최초 로그인 절차';
+  const steps=[]; document.querySelectorAll('.step-text').forEach(e=>steps.push(e.textContent.trim()));
+  const lnotes=[]; sections[2]?.querySelectorAll('.note-list-item-text').forEach(e=>lnotes.push(e.textContent.trim()));
+
+  // 수강 가이드
+  const s04title=sections[3]?.querySelector('.section-title')?.textContent.trim()||'수강 가이드';
+  const gtitle=document.querySelector('.guide-title')?.textContent.trim()||'';
+  const gdesc=document.querySelector('.guide-desc')?.textContent.trim()||'';
+  const ghref=document.querySelector('.guide-btn')?.getAttribute('href')||'';
+  const gcta=document.querySelector('.guide-btn span')?.textContent.trim()||'바로가기';
+
+  // 문의처
+  const s05title=sections[4]?.querySelector('.section-title')?.textContent.trim()||'문의처';
+  const cbs=document.querySelectorAll('.contact-box');
+  const ch={href:cbs[0]?.getAttribute('href')||'',val:cbs[0]?.querySelector('.contact-value')?.textContent.trim()||''};
+  const em={href:cbs[1]?.getAttribute('href')||'',val:cbs[1]?.querySelector('.contact-value')?.textContent.trim()||''};
+  const tel={href:cbs[2]?.getAttribute('href')||'',val:cbs[2]?.querySelector('.contact-value')?.textContent.trim()||''};
+
+  // 푸터
+  const fbrand=document.querySelector('.footer-brand')?.textContent.trim()||'';
+  let faddr=''; for(const c of document.querySelector('.footer')?.children||[]){
+    if(!c.classList.contains('footer-brand')&&!c.classList.contains('footer-divider')&&!c.classList.contains('footer-note')){faddr=c.textContent.trim();break;}
+  }
+  const fnote=document.querySelector('.footer-note')?.textContent.trim()||'';
+
+  // ── 빌더: 단일 테이블 구조 — 모든 섹션이 하나의 <table> 안에 <tr>로 조립됨 ──
+  const SF = `font-family:${F};`;
+  const SZ = `font-size:0;line-height:0;mso-line-height-rule:exactly;padding:0;`;
+
+  // row: <tr> 행 반환 (외부 table 안에 직접 삽입)
+  function row(html, pad='5px 32px', bg=W){
+    const p=pad.replace(/px/g,'').trim().split(/\s+/).map(Number);
+    const pt=p[0]||12,pr=p[1]||32,pb=p[2]!==undefined?p[2]:pt,pl=p[3]!==undefined?p[3]:pr;
+    return `<tr><td colspan="3" height="${pt}" bgcolor="${bg}" style="background-color:${bg};${SZ}"> </td></tr>
+<tr>
+  <td width="${pl}" bgcolor="${bg}" style="background-color:${bg};padding:0;font-size:0;"> </td>
+  <td bgcolor="${bg}" style="background-color:${bg};padding:0;vertical-align:top;">${html}</td>
+  <td width="${pr}" bgcolor="${bg}" style="background-color:${bg};padding:0;font-size:0;"> </td>
+</tr>
+<tr><td colspan="3" height="${pb}" bgcolor="${bg}" style="background-color:${bg};${SZ}"> </td></tr>`;
+  }
+
+  function divider(){
+    return `<tr><td colspan="3" height="1" bgcolor="${LINE}" style="background-color:${LINE};${SZ}"> </td></tr>`;
+  }
+
+  function secHead(num, title){
+    return `<table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:8px;"><tbody><tr>
+      <td width="26" height="26" bgcolor="${ACS}" align="center" valign="middle" style="background-color:${ACS};width:26px;height:26px;text-align:center;vertical-align:middle;font-size:11px;font-weight:bold;color:${AC};${SF}">${num}</td>
+      <td style="padding-left:8px;"><p style="margin:0;font-size:16px;color:#000000;${SF}"><b>${title}</b></p></td>
+    </tr></tbody></table>`;
+  }
+
+  function noteRows(notes, col=WARN, bg=WARNS){
+    if(!notes.length) return '';
+    return `<table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-top:6px;"><tbody>
+      <tr><td bgcolor="${bg}" style="background-color:${bg};padding:5px 12px;border-radius:8px;">
+        ${notes.map(n=>`<p style="margin:0;line-height:1.5;font-size:11px;color:${col};${SF}"><b>· ${n}</b></p>`).join('')}
+      </td></tr></tbody></table>`;
+  }
+
+  function icon(name, size=13){
+    return `<img src="${ICONS}/${name}.svg" width="${size}" height="${size}" style="display:inline;vertical-align:middle;margin-right:5px;" border="0">`;
+  }
+
+  // 수강 정보 행
+  const infoTR = infoRows.map((r,i)=>{
+    const vc=r.isAc?AC:INK;
+    const sep=i>0?`<tr><td colspan="2" bgcolor="#D1D5DB" style="background-color:#D1D5DB;height:1px;${SZ}"> </td></tr>`:'';
+    const ic=r.iconName?icon(r.iconName):'';
+    return `${sep}<tr>
+      <td width="120" bgcolor="${W}" style="background-color:${W};vertical-align:top;padding:6px 14px;">
+        <p style="margin:0;font-size:13px;color:${INK};${SF}"><b>${ic}${r.label}</b></p>
+      </td>
+      <td bgcolor="${W}" style="background-color:${W};vertical-align:top;padding:6px 14px;">
+        <p style="margin:0;font-size:13px;color:${vc};${SF}"><b>${r.val}</b></p>
+        ${r.sub?`<p style="margin:3px 0 0 0;font-size:11px;color:${INK};${SF}"><b>${r.sub}</b></p>`:''}
+      </td></tr>`;
+  }).join('');
+
+  // 로그인 절차
+  const stepsTR=steps.map((s,i)=>`<tr><td style="padding:2px 0;">
+    <table border="0" cellpadding="0" cellspacing="0"><tbody><tr>
+      <td style="vertical-align:middle;padding-right:7px;">
+        <span style="display:inline-block;background-color:${AC};color:${W};font-size:9px;font-weight:bold;padding:2px 5px;border-radius:3px;${SF}">${i+1}</span>
+      </td>
+      <td style="vertical-align:middle;"><p style="margin:0;font-size:12px;color:${INK};${SF}"><b>${s}</b></p></td>
+    </tr></tbody></table></td></tr>`).join('');
+
+  // 문의처 카드
+  function ccCard(label,val,href,iconName,w=290){
+    const ic=iconName?icon(iconName,12):'';
+    return `<td width="${w}" style="vertical-align:top;padding:2px;">
+      <table border="0" cellpadding="0" cellspacing="0" width="100%"><tbody>
+        <tr><td bgcolor="${ACS}" style="background-color:${ACS};padding:6px 10px;border-radius:8px;">
+          <p style="margin:0 0 2px 0;font-size:11px;color:${INK};${SF}"><b>${ic}${label}</b></p>
+          <p style="margin:0;font-size:12px;${SF}"><a href="${href}" target="_blank" style="color:${AC};text-decoration:none;font-weight:bold;"><b>${val}</b></a></p>
+        </td></tr></tbody></table></td>`;
+  }
+
+  // ── 단일 테이블로 조립 ──
+  const bannerUrl=document.getElementById('bannerGifUrl')?.value.trim();
+  const heroRows=bannerUrl
+    ?`<tr><td colspan="3" style="padding:0;font-size:0;line-height:0;"><img src="${bannerUrl}" width="640" style="width:100%;max-width:640px;display:block;border:0;" border="0"></td></tr>`
+    :`<tr><td colspan="3" height="8" bgcolor="${AC}" style="background-color:${AC};${SZ}"> </td></tr>
+<tr>
+  <td width="32" bgcolor="${AC}" style="background-color:${AC};padding:0;font-size:0;"> </td>
+  <td bgcolor="${AC}" style="background-color:${AC};padding:20px 0 6px;">
+    <img src="${LOGO}" width="26" height="26" style="display:inline;vertical-align:middle;margin-right:8px;" border="0">
+    <span style="font-size:13px;font-weight:700;color:${W};vertical-align:middle;${SF}">skillflo</span>
+    <span style="color:#8BAAD4;margin:0 8px;vertical-align:middle;">|</span>
+    <span style="font-size:11px;font-weight:600;color:#B0C4DE;vertical-align:middle;${SF}">${eyebrow}</span>
+  </td>
+  <td width="32" bgcolor="${AC}" style="background-color:${AC};padding:0;font-size:0;"> </td>
+</tr>
+<tr>
+  <td width="32" bgcolor="${AC}" style="background-color:${AC};padding:0;font-size:0;"> </td>
+  <td bgcolor="${AC}" style="background-color:${AC};padding:8px 0 6px;font-size:26px;font-weight:700;color:${W};line-height:1.35;${SF}">${heroTitle}</td>
+  <td width="32" bgcolor="${AC}" style="background-color:${AC};padding:0;font-size:0;"> </td>
+</tr>
+<tr>
+  <td width="32" bgcolor="${AC}" style="background-color:${AC};padding:0;font-size:0;"> </td>
+  <td bgcolor="${AC}" style="background-color:${AC};padding:6px 0 24px;">
+    <table border="0" cellpadding="0" cellspacing="0"><tbody><tr>
+      <td bgcolor="#2D5AA0" style="background-color:#2D5AA0;padding:4px 14px;border-radius:20px;">
+        <p style="margin:0;font-size:12px;font-weight:600;color:${W};${SF}">${heroMeta}</p>
+      </td></tr></tbody></table>
+  </td>
+  <td width="32" bgcolor="${AC}" style="background-color:${AC};padding:0;font-size:0;"> </td>
+</tr>
+<tr><td colspan="3" height="4" bgcolor="${AC}" style="background-color:${AC};${SZ}"> </td></tr>`;
+
+  const allRows=[
+    heroRows,
+    row(`<p style="margin:0 0 6px 0;font-size:11px;font-weight:700;color:${INK3};letter-spacing:.06em;${SF}">FROM</p>
+         <p style="margin:0;font-size:14px;color:${INK};line-height:1.7;${SF}"><b>${greeting}</b></p>`,'10px 32px 8px'),
+    divider(),
+    row(`${secHead('01',s01title)}
+      <table border="0" cellpadding="0" cellspacing="0" width="100%" style="border:1px solid ${LINE};border-radius:8px;border-collapse:separate;"><tbody>${infoTR}</tbody></table>
+      ${noteRows(infoNotes)}`,'5px 32px'),
+    divider(),
+    row(`${secHead('02',s02title)}
+      <table border="0" cellpadding="0" cellspacing="0" width="100%"><tbody><tr>
+        <td bgcolor="${ACS}" style="background-color:${ACS};padding:10px 14px;border-radius:8px;">
+          <table border="0" cellpadding="0" cellspacing="0" width="100%"><tbody><tr>
+            <td style="font-size:13px;font-weight:bold;color:${AC};${SF}">${accessUrl}</td>
+            <td style="text-align:right;white-space:nowrap;">
+              <a href="${accessHref}" target="_blank" style="display:inline-block;background-color:${AC};color:${W};font-size:12px;font-weight:bold;padding:7px 14px;text-decoration:none;${SF}">${accessCta} ↗</a>
+            </td></tr></tbody></table>
+        </td></tr></tbody></table>`,'5px 32px'),
+    divider(),
+    row(`${secHead('03',s03title)}
+      ${secDesc?`<p style="margin:0 0 10px 0;font-size:13px;color:${INK};${SF}"><b>${secDesc}</b></p>`:''}
+      <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:8px;"><tbody><tr>
+        <td width="283" bgcolor="${ACS}" style="background-color:${ACS};vertical-align:top;padding:8px 11px;padding-right:3px;border-radius:8px;">
+          <p style="margin:0 0 3px 0;font-size:11px;color:${INK};${SF}"><b>${icon('mail',12)}아이디</b></p>
+          <p style="margin:0 0 2px 0;font-size:13px;color:${INK};${SF}"><b>${lid}</b></p>
+          ${lidn?`<p style="margin:0;font-size:9px;color:${INK};${SF}"><b>${lidn}</b></p>`:''}
+        </td>
+        <td width="6" style="font-size:0;padding:0;"> </td>
+        <td bgcolor="${ACS}" style="background-color:${ACS};vertical-align:top;padding:8px 11px;border-radius:8px;">
+          <p style="margin:0 0 3px 0;font-size:11px;color:${INK};${SF}"><b>${icon('lock',12)}비밀번호&nbsp;<span style="background-color:${AC};color:${W};font-size:9px;padding:1px 4px;">${lbadge}</span></b></p>
+          <p style="margin:0;font-size:13px;color:${INK};${SF}"><b>${lpw}</b></p>
+        </td>
+      </tr></tbody></table>
+      <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:0;"><tbody>
+        <tr><td bgcolor="${ACS}" style="background-color:${ACS};padding:6px 10px;border-radius:8px;">
+          <p style="margin:0 0 4px 0;font-size:12px;color:${INK};${SF}"><b>${stitle}</b></p>
+          <table border="0" cellpadding="0" cellspacing="0" width="100%"><tbody>${stepsTR}</tbody></table>
+        </td></tr>
+      </tbody></table>
+      ${noteRows(lnotes)}`,'5px 32px'),
+    divider(),
+    row(`${secHead('04',s04title)}
+      <table border="0" cellpadding="0" cellspacing="0" width="100%"><tbody><tr>
+        <td width="36" bgcolor="${ACS}" style="background-color:${ACS};padding:7px 8px;vertical-align:middle;text-align:center;border-radius:8px 0 0 8px;">
+          <img src="${ICONS}/guide.svg" width="16" height="16" style="display:block;margin:0 auto;" border="0">
+        </td>
+        <td bgcolor="${ACS}" style="background-color:${ACS};padding:7px 10px;vertical-align:middle;">
+          <p style="margin:0 0 1px 0;font-size:12px;color:${INK};${SF}"><b>${gtitle}</b></p>
+          <p style="margin:0;font-size:11px;color:${INK};${SF}"><b>${gdesc}</b></p>
+        </td>
+        <td bgcolor="${ACS}" style="background-color:${ACS};padding:7px 10px;text-align:right;vertical-align:middle;white-space:nowrap;border-radius:0 8px 8px 0;">
+          <a href="${ghref}" target="_blank" style="display:inline-block;border:1px solid ${INK};padding:4px 10px;font-size:11px;font-weight:bold;color:${INK};text-decoration:none;${SF}">${gcta} ›</a>
+        </td></tr></tbody></table>`,'5px 32px'),
+    divider(),
+    row(`${secHead('05',s05title)}
+      <table border="0" cellpadding="0" cellspacing="0" width="100%"><tbody>
+        <tr>${ccCard('채널톡',ch.val,ch.href,'chat')}${ccCard('이메일',em.val,em.href,'mail')}</tr>
+        <tr>${ccCard('전화',tel.val,tel.href,'phone',290)}</tr>
+      </tbody></table>`,'5px 32px'),
+    divider(),
+    row(`<table border="0" cellpadding="0" cellspacing="0" width="100%"><tbody><tr>
+      <td align="center" style="text-align:center;">
+        <p style="margin:0 0 3px 0;font-size:13px;color:${INK};text-align:center;${SF}"><b>${fbrand}</b></p>
+        <p style="margin:0 0 6px 0;font-size:11px;color:${INK3};text-align:center;${SF}">${faddr}</p>
+        <p style="margin:0;font-size:11px;color:${INK3};text-align:center;${SF}">${fnote}</p>
+      </td></tr></tbody></table>`,'10px 32px'),
+  ].join('');
+
+  // 외부 배경(회색) + 내부 단일 white table
+  const html=
+    `<table border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="${BG}" style="background-color:${BG};">`+
+    `<tbody><tr><td align="center" style="padding:20px 0;">`+
+    `<table border="0" cellpadding="0" cellspacing="0" width="640" bgcolor="${W}" style="max-width:640px;background-color:${W};">`+
+    `<tbody>`+allRows+`</tbody>`+
+    `</table></td></tr></tbody></table>`;
+
+  const done=()=>{ if(wasShowingDummy) toggleVars(); showToast(); };
+  navigator.clipboard.writeText(html).then(done).catch(()=>{
+    const ta=document.createElement('textarea');
+    ta.value=html; document.body.appendChild(ta);
+    ta.select(); document.execCommand('copy');
+    document.body.removeChild(ta); done();
+  });
+}
+
+function showToast(){
+  const toast = document.getElementById('toast');
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2200);
+}
+
+async function saveHeroGIF(){
+  const hero = document.querySelector('.hero');
+  const btn  = document.getElementById('gifBtn');
+  if(!hero || !window.GIF){
+    alert('라이브러리 로딩 중입니다. 잠시 후 다시 시도해주세요.');
+    return;
+  }
+  btn.disabled = true;
+
+  const FPS      = 15;
+  const DURATION = 5000;  // 5초 (hero-logo-float 5s 기준)
+  const DELAY    = Math.round(1000 / FPS);
+  const TOTAL    = Math.round(DURATION / DELAY);
+  const W        = hero.offsetWidth;
+  const H        = hero.offsetHeight;
+  const heroRect = hero.getBoundingClientRect();
+
+  // 도형 위치를 DOM에서 실측
+  function rel(sel){
+    const el = document.querySelector(sel);
+    if(!el) return null;
+    const r = el.getBoundingClientRect();
+    return { x: r.left - heroRect.left, y: r.top - heroRect.top, w: r.width, h: r.height };
+  }
+  const P = {
+    circle: rel('.geo-circle'),
+    logo:   rel('.geo-logo'),
+    square: rel('.geo-square'),
+    tri:    rel('.geo-tri'),
+    ring:   rel('.geo-ring'),
+    dot:    rel('.geo-dot'),
+  };
+
+  // 이미지 로드
+  function loadImg(src){ return new Promise(res=>{ const i=new Image(); i.crossOrigin='anonymous'; i.onload=()=>res(i); i.onerror=()=>res(null); i.src=src; }); }
+  const logoImg  = await loadImg(document.querySelector('.geo-logo')?.src || '');
+  const markImg  = await loadImg(document.querySelector('.sf-mark')?.src || '');
+
+  // ease helpers
+  function easeInOut(t){ return t<.5 ? 2*t*t : -1+(4-2*t)*t; }
+  function floatY(period, t, amp=10){
+    const p=(t%period)/period;
+    return -(amp/2)*(1-Math.cos(p*2*Math.PI));
+  }
+
+  // 캔버스 생성
+  const canvas = document.createElement('canvas');
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+
+  // 배경 그리기
+  function drawBg(){
+    const lg = ctx.createLinearGradient(W,0,0,H);
+    lg.addColorStop(0,'#FFFFFF'); lg.addColorStop(.6,'#F8FAFC'); lg.addColorStop(1,'#F1F5F9');
+    ctx.fillStyle=lg; ctx.fillRect(0,0,W,H);
+    const rg1=ctx.createRadialGradient(W*.9,H*.3,0,W*.9,H*.3,W*.5);
+    rg1.addColorStop(0,'rgba(191,219,254,0.45)'); rg1.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=rg1; ctx.fillRect(0,0,W,H);
+    const rg2=ctx.createRadialGradient(W*.1,H*.85,0,W*.1,H*.85,W*.5);
+    rg2.addColorStop(0,'rgba(224,231,255,0.35)'); rg2.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=rg2; ctx.fillRect(0,0,W,H);
+  }
+
+  function drawFrame(t){
+    ctx.clearRect(0,0,W,H);
+    drawBg();
+
+    const rot30  = (t/30000)*Math.PI*2;
+    const rot9r  = -(t/9000)*Math.PI*2;
+    const sqP    = (t%9000)/9000;
+    const sqAng  = sqP<.5 ? easeInOut(sqP*2)*Math.PI : easeInOut((1-sqP)*2)*Math.PI;
+    const logoP  = (t%5000)/5000;
+    const logoRaw= Math.cos(logoP*2*Math.PI);
+    const logoY  = 2-8*logoRaw;
+    const logoR  = -6*Math.PI/180*logoRaw;
+
+    // geo-circle (dashed ring)
+    if(P.circle){
+      const cx=P.circle.x+P.circle.w/2, cy=P.circle.y+P.circle.h/2;
+      ctx.save(); ctx.translate(cx,cy); ctx.rotate(rot30);
+      ctx.beginPath(); ctx.arc(0,0,P.circle.w/2,0,Math.PI*2);
+      ctx.strokeStyle='rgba(59,130,246,0.3)'; ctx.lineWidth=2;
+      ctx.setLineDash([8,6]); ctx.stroke(); ctx.setLineDash([]);
+      ctx.restore();
+    }
+
+    // geo-ring (yellow arc, top+right)
+    if(P.ring){
+      const rx=P.ring.x+P.ring.w/2, ry=P.ring.y+P.ring.h/2;
+      ctx.save(); ctx.translate(rx,ry); ctx.rotate(rot9r);
+      ctx.beginPath();
+      ctx.arc(0,0,P.ring.w/2-4.5,-Math.PI/2,0);
+      ctx.strokeStyle='#FBBF24'; ctx.lineWidth=9; ctx.stroke();
+      ctx.restore();
+    }
+
+    // geo-square (blue rounded rect)
+    if(P.square){
+      const sx=P.square.x+P.square.w/2, sy=P.square.y+P.square.h/2;
+      ctx.save(); ctx.translate(sx,sy); ctx.rotate(sqAng);
+      const sg=ctx.createLinearGradient(-P.square.w/2,-P.square.h/2,P.square.w/2,P.square.h/2);
+      sg.addColorStop(0,'#60A5FA'); sg.addColorStop(1,'#3B82F6');
+      ctx.fillStyle=sg;
+      const rr=9, hw=P.square.w/2, hh=P.square.h/2;
+      ctx.beginPath();
+      ctx.moveTo(-hw+rr,-hh); ctx.lineTo(hw-rr,-hh); ctx.quadraticCurveTo(hw,-hh,hw,-hh+rr);
+      ctx.lineTo(hw,hh-rr); ctx.quadraticCurveTo(hw,hh,hw-rr,hh);
+      ctx.lineTo(-hw+rr,hh); ctx.quadraticCurveTo(-hw,hh,-hw,hh-rr);
+      ctx.lineTo(-hw,-hh+rr); ctx.quadraticCurveTo(-hw,-hh,-hw+rr,-hh);
+      ctx.closePath(); ctx.fill();
+      ctx.restore();
+    }
+
+    // geo-tri (blue triangle, floatY 4s)
+    if(P.tri){
+      const fy=floatY(4000,t);
+      const tx=P.tri.x+8, ty=P.tri.y+P.tri.h/2+fy;
+      ctx.save(); ctx.translate(tx,ty);
+      ctx.beginPath(); ctx.moveTo(0,-14); ctx.lineTo(-16,14); ctx.lineTo(16,14);
+      ctx.closePath(); ctx.fillStyle='#BFDBFE'; ctx.fill();
+      ctx.restore();
+    }
+
+    // geo-dot (dark dot, floatY 3s)
+    if(P.dot){
+      const fy=floatY(3000,t);
+      ctx.beginPath();
+      ctx.arc(P.dot.x+5,P.dot.y+5+fy,5,0,Math.PI*2);
+      ctx.fillStyle='#0F172A'; ctx.fill();
+    }
+
+    // geo-logo (floating logo)
+    if(P.logo && logoImg){
+      const lx=P.logo.x+P.logo.w/2, ly=P.logo.y+P.logo.h/2;
+      ctx.save(); ctx.translate(lx,ly+logoY); ctx.rotate(logoR);
+      ctx.drawImage(logoImg,-P.logo.w/2,-P.logo.h/2,P.logo.w,P.logo.h);
+      ctx.restore();
+    }
+
+    // ── 텍스트 영역 ──
+    const PAD=32;
+    // sf-mark
+    if(markImg) ctx.drawImage(markImg,PAD,22,32,35);
+    ctx.font='800 19px "Apple SD Gothic Neo","Noto Sans KR",sans-serif';
+    ctx.fillStyle='#0F172A';
+    ctx.fillText('skillflo', PAD+42, 22+24);
+    const sfW = ctx.measureText('skillflo').width;
+    ctx.fillStyle='#CBD5E1';
+    ctx.fillRect(PAD+42+sfW+8,22+8,1,18);
+    ctx.font='700 11px "Apple SD Gothic Neo","Noto Sans KR",sans-serif';
+    ctx.fillStyle='#64748B';
+    ctx.fillText(
+      document.querySelector('.sf-eyebrow')?.textContent.trim()||'FASTCAMPUS ENTERPRISE',
+      PAD+42+sfW+18, 22+22
+    );
+
+    // hero-title
+    const titleEl = document.querySelector('.hero-title');
+    const titleLines = titleEl ? titleEl.innerText.split('\n').map(s=>s.trim()).filter(Boolean) : ['새로운 학습이','시작되었습니다'];
+    const titleY = 22+35+18;
+    ctx.font='800 26px "Apple SD Gothic Neo","Noto Sans KR",sans-serif';
+    titleLines.forEach((line,i)=>{
+      if(i===titleLines.length-1){
+        // 마지막 줄 b태그 (파란색)
+        ctx.fillStyle='#3B82F6';
+      } else {
+        ctx.fillStyle='#0F172A';
+      }
+      ctx.fillText(line, PAD, titleY + i*34);
+    });
+
+    // hero-meta
+    const metaText = document.querySelector('.hero-meta span:last-child')?.textContent.trim()||'수강 시작 안내';
+    const metaTop  = titleY + titleLines.length*34 + 12;
+    ctx.font='700 15px "Apple SD Gothic Neo","Noto Sans KR",sans-serif';
+    const metaW = ctx.measureText(metaText).width + 54;
+    // pill bg
+    ctx.beginPath();
+    ctx.roundRect ? ctx.roundRect(PAD,metaTop,metaW,34,17)
+      : (()=>{ctx.arc(PAD+17,metaTop+17,17,Math.PI,0); ctx.arc(PAD+metaW-17,metaTop+17,17,0,Math.PI); ctx.closePath();})();
+    ctx.fillStyle='rgba(59,130,246,0.1)'; ctx.fill();
+    // dot
+    const pulse = (1+Math.sin(t/2000*Math.PI))/2;
+    ctx.beginPath(); ctx.arc(PAD+18,metaTop+17,3,0,Math.PI*2);
+    ctx.fillStyle='#10B981'; ctx.fill();
+    ctx.beginPath(); ctx.arc(PAD+18,metaTop+17,3+2+pulse*2,0,Math.PI*2);
+    ctx.strokeStyle=`rgba(16,185,129,${0.2*(1-pulse*0.5)})`; ctx.lineWidth=1.5; ctx.stroke();
+    // text
+    ctx.fillStyle='#1D4ED8';
+    ctx.fillText(metaText, PAD+18+9, metaTop+21);
+  }
+
+  // 모든 프레임 생성 (동기, 매우 빠름)
+  const gif = new GIF({
+    workers: 4, quality: 5, width: W, height: H,
+    workerScript: 'https://skillflo-mail.vercel.app/gif.worker.js'
+  });
+
+  for(let i=0; i<TOTAL; i++){
+    btn.textContent=`렌더링 ${Math.round((i+1)/TOTAL*100)}%`;
+    drawFrame(i*DELAY);
+    gif.addFrame(ctx, {delay:DELAY, copy:true});
+    if(i%5===0) await new Promise(r=>setTimeout(r,0)); // UI 숨통
+  }
+
+  btn.textContent = 'GIF 생성 중...';
+
+  gif.on('finished', blob => {
+    const url = URL.createObjectURL(blob);
+    const a   = document.createElement('a');
+    a.href     = url;
+    a.download = 'hero_banner.gif';
+    a.click();
+    URL.revokeObjectURL(url);
+    btn.textContent = '배너 GIF 저장';
+    btn.disabled    = false;
+
+    const input = document.getElementById('bannerGifUrl');
+    input.placeholder = 'GIF 저장 완료! 업로드 후 URL을 여기에 붙여넣기';
+    input.style.borderColor = '#1E3A8A';
+  });
+
+  gif.render();
+}
+</script>
+</body>
+</html>

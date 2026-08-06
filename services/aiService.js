@@ -75,6 +75,48 @@ function callGroq(prompt) {
   });
 }
 
+function callGroqCustom(systemPrompt, userPrompt, maxTokens = 4000) {
+  return new Promise((resolve, reject) => {
+    const data = JSON.stringify({
+      model: 'llama-3.3-70b-versatile',
+      max_tokens: maxTokens,
+      temperature: 0.4,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt },
+      ],
+    });
+
+    const options = {
+      hostname: 'api.groq.com',
+      path: '/openai/v1/chat/completions',
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + API_KEY,
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(data),
+      },
+    };
+
+    const req = https.request(options, (res) => {
+      const chunks = [];
+      res.on('data', chunk => chunks.push(chunk));
+      res.on('end', () => {
+        try {
+          const body = JSON.parse(Buffer.concat(chunks).toString());
+          if (body.error) { reject(new Error(body.error.message)); return; }
+          resolve(body.choices[0].message.content);
+        } catch (e) { reject(e); }
+      });
+    });
+
+    req.on('error', reject);
+    req.setTimeout(60000, () => { req.destroy(); reject(new Error('Timeout')); });
+    req.write(data);
+    req.end();
+  });
+}
+
 async function summarizeLecture(lecture, retries = 2) {
   const prompt = `아래 강의 정보를 요약해주세요.
 
@@ -159,4 +201,4 @@ ${list}
   return {};
 }
 
-module.exports = { summarizeLecture, extractKeywords, loadApiKey, API_KEY };
+module.exports = { summarizeLecture, extractKeywords, loadApiKey, API_KEY, callGroqCustom };

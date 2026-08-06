@@ -1,15 +1,16 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
-const { handleIpgwaRoutes } = require('./routes/ipgwa');
 const { handleLectureInfoRoutes } = require('./routes/lectureInfo');
 const { handleRecommendRoutes } = require('./routes/recommend');
 const { handleCatalogRoutes } = require('./routes/catalog');
-const { handleReportRoutes } = require('./routes/report');
 const { handleCategorizeRoutes } = require('./routes/categorize');
 const { handleMembersRoutes } = require('./routes/members');
 const { handleResultReportRoutes } = require('./routes/resultReport');
 const { handleCompanyListRoutes } = require('./routes/companyList');
+const { handleSettlementRoutes } = require('./routes/settlement');
+const { handleEnrollmentReportRoutes } = require('./routes/enrollmentReport');
+const { handleGuideRoutes } = require('./routes/guide');
 
 const PORT = process.env.PORT || 3000;
 
@@ -20,6 +21,9 @@ const MIME_TYPES = {
   '.json': 'application/json',
   '.png': 'image/png',
   '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.gif': 'image/gif',
+  '.webp': 'image/webp',
   '.svg': 'image/svg+xml',
   '.ico': 'image/x-icon',
   '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -121,9 +125,6 @@ const server = http.createServer(async (req, res) => {
     }
 
     // API routes
-    if (req.url.startsWith('/api/ipgwa')) {
-      return await handleIpgwaRoutes(req, res, { parseMultipart, sendJson });
-    }
     if (req.url.startsWith('/api/lecture-info')) {
       return await handleLectureInfoRoutes(req, res, { parseMultipart, sendJson });
     }
@@ -132,9 +133,6 @@ const server = http.createServer(async (req, res) => {
     }
     if (req.url.startsWith('/api/catalog')) {
       return await handleCatalogRoutes(req, res, { sendJson });
-    }
-    if (req.url.startsWith('/api/report')) {
-      return await handleReportRoutes(req, res, { sendJson });
     }
     if (req.url.startsWith('/api/categorize')) {
       return await handleCategorizeRoutes(req, res, { sendJson });
@@ -147,6 +145,15 @@ const server = http.createServer(async (req, res) => {
     }
     if (req.url.startsWith('/api/company-list')) {
       return await handleCompanyListRoutes(req, res, { sendJson });
+    }
+    if (req.url.startsWith('/api/settlement')) {
+      return await handleSettlementRoutes(req, res, { parseMultipart, sendJson });
+    }
+    if (req.url.startsWith('/api/enrollment-report')) {
+      return await handleEnrollmentReportRoutes(req, res, { parseMultipart, sendJson });
+    }
+    if (req.url.startsWith('/api/guide')) {
+      return await handleGuideRoutes(req, res, { parseMultipart, sendJson });
     }
 
     // Static files

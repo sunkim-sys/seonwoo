@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Web Tools - 독려메일 에디터</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+.mail-editor{
+  --bg:#F4F4F2;--card:#FFFFFF;--ink:#0E1726;--ink-2:#475569;--ink-3:#94A3B8;
+  --line:#E5E7EB;--line-2:#F1F2F4;--accent:#1E3A8A;--accent-soft:#EEF2F9;
+  --warn:#92400E;--warn-soft:#FEF6E4;
+}
+.mail-editor{
+  background:var(--bg);
+  font-family:'Pretendard','Pretendard Variable',-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sans KR','Malgun Gothic',sans-serif;
+  color:var(--ink);-webkit-font-smoothing:antialiased;
+  padding:32px 16px 60px;
+  border-radius:20px;
+}
+
+/* ===== Toolbar ===== */
+.toolbar{
+  position:sticky;top:16px;z-index:50;
+  max-width:680px;margin:0 auto 16px;
+  background:#fff;border:1px solid var(--line);border-radius:14px;
+  padding:10px 14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  box-shadow:0 4px 16px rgba(14,23,38,.06);
+}
+.toolbar-title{
+  font-size:13px;font-weight:600;color:var(--ink);
+  display:flex;align-items:center;gap:8px;flex-shrink:0;
+}
+.tab-group{display:flex;gap:4px;flex:1}
+.tab-btn{
+  border:1px solid var(--line);background:#fff;color:var(--ink-2);
+  padding:7px 12px;border-radius:8px;font-size:12px;font-weight:600;
+  cursor:pointer;font-family:inherit;transition:all .15s;white-space:nowrap;
+}
+.tab-btn:hover{background:#FAFAFA;color:var(--ink)}
+.tab-btn.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+.toolbar-divider{width:1px;height:24px;background:var(--line);flex-shrink:0}
+.btn{
+  border:1px solid var(--line);background:#fff;color:var(--ink);
+  padding:8px 14px;border-radius:9px;font-size:12.5px;font-weight:600;
+  cursor:pointer;font-family:inherit;transition:all .15s;white-space:nowrap;
+}
+.btn:hover{background:#FAFAFA;border-color:#D1D5DB}
+.btn.primary{background:var(--ink);color:#fff;border-color:var(--ink)}
+.btn.primary:hover{background:#1E293B}
+.toast{
+  position:fixed;left:50%;bottom:32px;
+  transform:translateX(-50%) translateY(20px);
+  background:var(--ink);color:#fff;padding:12px 20px;
+  border-radius:10px;font-size:13px;font-weight:500;
+  opacity:0;pointer-events:none;transition:all .3s;z-index:100;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ===== Email Container ===== */
+.email{
+  max-width:640px;margin:0 auto;
+  background:var(--card);border-radius:18px;overflow:hidden;
+  box-shadow:0 8px 32px rgba(14,23,38,.06);
+  display:none;
+}
+.email.active{display:block}
+
+/* ===== HERO ===== */
+.hero{
+  position:relative;padding:22px 32px 28px;
+  background:radial-gradient(circle at 90% 30%,rgba(191,219,254,.45) 0%,transparent 50%),
+    radial-gradient(circle at 10% 85%,rgba(224,231,255,.35) 0%,transparent 50%),
+    linear-gradient(135deg,#fff 0%,#F8FAFC 60%,#F1F5F9 100%);
+  color:#0F172A;overflow:hidden;isolation:isolate;
+}
+.hero-deco{position:absolute;top:6px;right:22px;width:260px;height:200px;pointer-events:none;z-index:0}
+.sf-mark{object-fit:contain}
+/* === Calendar Urgency Decoration === */
+.hcal{
+  position:absolute;top:14px;right:14px;
+  width:204px;
+  background:rgba(255,255,255,.97);
+  border:1.5px solid rgba(59,130,246,.28);
+  border-radius:16px;
+  padding:13px 14px 14px;
+  box-shadow:0 8px 28px rgba(59,130,246,.14),0 2px 8px rgba(0,0,0,.05);
+  animation:cal-float 4s ease-in-out infinite;
+  z-index:2;
+}
+.hcal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid rgba(30,58,138,.08);color:#94A3B8}
+.hcal-rdot{width:8px;height:8px;border-radius:50%;background:#EF4444;box-shadow:0 0 0 3px rgba(239,68,68,.2);animation:rdot-pulse 1.5s ease-in-out infinite;flex-shrink:0}
+.hcal-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:4px}
+.hcal-d{aspect-ratio:1;border-radius:7px;background:#F8FAFC;position:relative;overflow:hidden}
+.hcal-d.p2{background:#EEF2F7}
+.hcal-d:not(.cur):not(.near):not(.dl1):not(.dl)::after{content:'';position:absolute;top:50%;left:20%;width:60%;height:1.5px;background:rgba(203,213,225,.9);border-radius:1px;transform:translateY(-50%) rotate(-22deg)}
+.hcal-d.p2::after{background:rgba(148,163,184,.7)}
+.hcal-d.cur{background:#1E3A8A;box-shadow:0 3px 10px rgba(30,58,138,.35)}
+.hcal-d.near{background:rgba(251,191,36,.25)}
+.hcal-d.dl1{background:rgba(249,115,22,.28)}
+.hcal-d.dl{background:linear-gradient(135deg,#EF4444,#DC2626);box-shadow:0 3px 12px rgba(239,68,68,.4);animation:dl-pulse 1.5s ease-in-out infinite}
+/* === Stopwatch === */
+.sw{position:absolute;bottom:30px;left:22px;width:72px;z-index:3;transform:rotate(-12deg);transform-origin:center bottom}
+.sw-btn{width:18px;height:9px;background:linear-gradient(180deg,#3B82F6,#2563EB);border-radius:4px 4px 0 0;margin:0 auto -1px;position:relative;z-index:1}
+.sw-body{width:72px;height:72px;border-radius:50%;background:linear-gradient(145deg,#F8FAFC,#E2E8F0);border:3px solid #3B82F6;box-shadow:0 6px 20px rgba(59,130,246,.3),inset 0 2px 5px rgba(255,255,255,.9);position:relative}
+.sw-inner{position:absolute;inset:6px;border-radius:50%;background:rgba(255,255,255,.93);border:1.5px solid rgba(59,130,246,.12)}
+.sw-hand{position:absolute;left:50%;bottom:50%;width:2px;height:23px;background:#1E3A8A;transform-origin:50% 100%;transform:translateX(-50%);animation:sw-spin 2.5s linear infinite;border-radius:2px;margin-left:-1px;z-index:1}
+.sw-ctr{position:absolute;left:50%;top:50%;width:7px;height:7px;border-radius:50%;background:#0F172A;transform:translate(-50%,-50%);z-index:2;box-shadow:0 0 0 2px #fff}
+@keyframes sw-spin{from{transform:translateX(-50%) rotate(0)}to{transform:translateX(-50%) rotate(360deg)}}
+@keyframes cal-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+@keyframes rdot-pulse{0%,100%{box-shadow:0 0 0 3px rgba(239,68,68,.2)}50%{box-shadow:0 0 0 7px rgba(239,68,68,.07)}}
+@keyframes dl-pulse{0%,100%{box-shadow:0 3px 12px rgba(239,68,68,.4)}50%{box-shadow:0 3px 22px rgba(239,68,68,.7)}}
+@keyframes hero-pulse-dot{0%,100%{box-shadow:0 0 0 3px rgba(16,185,129,.2)}50%{box-shadow:0 0 0 6px rgba(16,185,129,.1)}}
+
+.hero-head{position:relative;z-index:2;display:flex;align-items:center;gap:10px;margin-bottom:18px}
+.sf-logo{display:flex;align-items:center;gap:10px}
+.sf-mark{width:32px;height:35px;flex-shrink:0}
+.sf-name{font-size:19px;font-weight:800;letter-spacing:-.02em;color:#0F172A}
+.sf-divider{width:1px;height:18px;background:#CBD5E1}
+.sf-eyebrow{font-size:12px;font-weight:700;letter-spacing:.14em;color:#64748B}
+.hero-content{position:relative;z-index:1;max-width:62%}
+.hero-title{font-size:26px;font-weight:800;line-height:1.3;letter-spacing:-.02em;color:#0F172A;margin:0}
+.hero-title b{color:#3B82F6;font-weight:800}
+.hero-meta{
+  margin-top:12px;display:inline-flex;align-items:center;gap:9px;
+  padding:10px 18px;background:rgba(59,130,246,.1);color:#1D4ED8;
+  border-radius:999px;font-size:15.5px;font-weight:700;letter-spacing:-.005em;
+}
+.hero-meta .dot{width:6px;height:6px;border-radius:50%;background:#10B981;box-shadow:0 0 0 3.5px rgba(16,185,129,.2);animation:hero-pulse-dot 2s ease-in-out infinite}
+
+/* ===== Greeting ===== */
+.greeting{padding:18px 32px 16px;border-bottom:1px solid var(--line)}
+.greeting-eyebrow{font-size:10.5px;font-weight:700;letter-spacing:.14em;color:var(--accent);margin-bottom:6px}
+.greeting-text{font-size:14px;line-height:1.65;color:var(--ink);margin:0}
+.greeting-text b{font-weight:700}
+.greeting-text .from{display:inline-block;padding:2px 8px;background:var(--accent-soft);color:var(--accent);font-size:12.5px;font-weight:700;border-radius:5px;margin:0 2px}
+
+/* ===== Section ===== */
+.section{padding:20px 32px;border-bottom:1px solid var(--line)}
+.section:last-of-type{border-bottom:none}
+.section.section-flush{border-bottom:none;padding-bottom:12px}
+.section-head{display:flex;align-items:center;gap:9px;margin-bottom:12px}
+.section-num{display:inline-block;flex-shrink:0;font-size:10.5px;font-weight:700;letter-spacing:.1em;color:var(--accent);background:var(--accent-soft);padding:3px 7px;border-radius:5px}
+.section-title{font-size:17px;font-weight:800;letter-spacing:-.02em;line-height:1.35;margin:0}
+
+/* ===== Course List ===== */
+.course-list{border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.course-item{position:relative;display:flex;align-items:center;gap:12px;padding:11px 16px;border-bottom:1px solid var(--line-2)}
+.course-item:last-child{border-bottom:none}
+.course-label{flex-shrink:0;width:90px;display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;color:var(--ink)}
+.course-label svg{color:var(--ink-3);flex-shrink:0}
+.course-name{flex:1;font-size:13.5px;font-weight:700;color:var(--ink);letter-spacing:-.005em;line-height:1.5}
+.course-del{position:absolute;top:50%;right:8px;transform:translateY(-50%);width:22px;height:22px;border-radius:6px;border:1px solid var(--line);background:#fff;color:var(--ink-3);font-size:14px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:0;transition:all .15s;padding:0;font-family:inherit}
+.course-item:hover .course-del{opacity:1}
+.course-del:hover{border-color:#EF4444;color:#EF4444;background:#FEF2F2}
+
+/* ===== Schedule Card ===== */
+.schedule-card{border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-top:10px}
+.sch-row{display:flex;align-items:flex-start;padding:11px 18px;gap:14px;border-bottom:1px solid var(--line-2)}
+.sch-row:last-child{border-bottom:none}
+.sch-label{flex-shrink:0;width:118px;font-size:12.5px;font-weight:600;color:var(--ink-2);display:flex;align-items:center;gap:8px;padding-top:2px}
+.sch-label svg{color:var(--ink-3);flex-shrink:0}
+.sch-value{flex:1;font-size:13.5px;font-weight:700;color:var(--ink);line-height:1.55;letter-spacing:-.005em}
+.sch-value.accent{color:var(--accent)}
+
+/* ===== Row Add ===== */
+.row-add{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;margin-top:8px;padding:10px;background:#fff;border:1px dashed var(--line);border-radius:10px;color:var(--ink-2);font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s}
+.row-add:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+
+/* ===== Note List ===== */
+.note-list{margin:10px 0 0;padding:10px 14px;background:var(--warn-soft);border-radius:8px}
+.note-item{display:flex;gap:8px;font-size:11.5px;color:var(--warn);line-height:1.65}
+.note-item+.note-item{margin-top:4px}
+.note-item::before{content:'';flex-shrink:0;width:3px;height:3px;border-radius:50%;background:currentColor;margin-top:8px}
+
+/* ===== Access / CTA ===== */
+.access-box{border:1.5px solid var(--ink);border-radius:12px;padding:14px;background:#FAFBFC}
+.access-url-wrap{display:flex;align-items:center;gap:10px;padding:10px 14px;background:#fff;border:1px solid var(--line);border-radius:9px;margin-bottom:10px}
+.access-url-wrap svg{color:var(--ink-3);flex-shrink:0}
+.access-url{flex:1;font-size:13.5px;font-weight:700;color:var(--ink);word-break:break-all;font-family:'SF Mono',Consolas,Menlo,monospace;letter-spacing:-.01em}
+.access-cta{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:13px;background:var(--ink);color:#fff;text-decoration:none;border-radius:9px;font-size:14px;font-weight:700;letter-spacing:-.005em;transition:background .15s}
+.access-cta:hover{background:#1E293B}
+
+/* ===== Banner ===== */
+.banner-wrap{margin:0 32px 20px;border-radius:12px;overflow:hidden}
+.banner-ph{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:120px;background:var(--line-2);border:2px dashed var(--line);border-radius:12px;padding:24px}
+.banner-ph-icon{width:40px;height:40px;border-radius:10px;background:var(--line);display:flex;align-items:center;justify-content:center;color:var(--ink-3)}
+.banner-ph-label{font-size:12.5px;font-weight:600;color:var(--ink-3)}
+.banner-ph-hint{font-size:11px;color:var(--ink-3)}
+.banner-img{width:100%;display:none}
+
+/* ===== Contact ===== */
+.contact-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.contact-box.full{grid-column:span 2}
+.contact-box{display:flex;align-items:center;gap:10px;padding:12px 14px;border:1px solid var(--line);border-radius:10px;text-decoration:none;color:var(--ink);transition:all .15s}
+.contact-box:hover{border-color:var(--ink);background:#FAFBFC}
+.contact-icon{flex-shrink:0;width:30px;height:30px;border-radius:8px;background:var(--accent-soft);color:var(--accent);display:flex;align-items:center;justify-content:center}
+.contact-content{flex:1;min-width:0}
+.contact-label{font-size:10.5px;font-weight:600;color:var(--ink-3);letter-spacing:.04em;margin-bottom:1px}
+.contact-value{font-size:12.5px;font-weight:700;color:var(--ink);letter-spacing:-.005em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ===== Footer ===== */
+.footer{padding:16px 32px;background:#F8FAFC;color:#64748B;font-size:11px;text-align:center;line-height:1.6;border-top:1px solid #E5E7EB}
+.footer-brand{color:#0F172A;font-weight:700;margin-bottom:3px;font-size:12px}
+.footer a{color:#3B82F6;text-decoration:underline}
+.footer-divider{height:1px;background:#E5E7EB;margin:8px auto;max-width:60px}
+.footer-note{font-size:10px;color:#94A3B8}
+
+/* ===== Editable ===== */
+[contenteditable="true"]{outline:none;border-radius:3px;transition:background .15s}
+[contenteditable="true"]:hover{background:rgba(30,58,138,.06)}
+[contenteditable="true"]:focus{background:rgba(30,58,138,.08);box-shadow:0 0 0 2px rgba(30,58,138,.2)}
+
+@media(max-width:640px){
+  .mail-editor{padding-left:12px;padding-right:12px}
+  .hero,.greeting,.section,.footer{padding-left:22px;padding-right:22px}
+  .banner-wrap{margin-left:22px;margin-right:22px}
+  .hero-content{max-width:100%}
+  .hero-title{font-size:22px}
+  .hero-meta{font-size:13px;padding:8px 14px}
+  .contact-grid{grid-template-columns:1fr}
+  .sch-row{flex-direction:column;gap:4px}
+  .sch-label{width:auto}
+  .hero-deco{width:210px;height:175px;top:auto;bottom:-5px;right:0;opacity:.9}
+  .hcal{width:168px;padding:10px 11px 12px;right:8px;top:8px;border-radius:12px}
+  .hcal-d{border-radius:5px}
+  .sw{width:56px;left:14px;bottom:22px}
+  .sw-body{width:56px;height:56px}
+  .sw-btn{width:14px;height:7px}
+  .sw-hand{height:17px}
+}
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <button id="sidebarToggle" aria-label="메뉴">☰</button>
+    <button id="themeToggle" aria-label="테마">🌙</button>
+  </div>
+  <aside class="sidebar">
+    <h1>Web Tools</h1>
+    <nav>
+      <a href="/">홈</a>
+      <a href="/pages/lecture-info.html">강의 정보 정리</a>
+      <a href="/pages/recommend.html">강의 추천</a>
+      <a href="/pages/catalog.html">과정 리스트</a>
+      <a href="/pages/categorize.html">카테고리 자동 분류</a>
+      <a href="/pages/result-report.html">결과 보고서</a>
+      <a href="/pages/enrollment-report.html">수강 리포트</a>
+      <a href="/pages/mail-guide.html">수강안내메일 에디터</a>
+      <a href="/pages/mail-encourage.html" class="active">독려메일 에디터</a>
+      <a href="/pages/package-guide.html">패키지강의 생성 가이드</a>
+      <a href="/pages/guide-public.html">가이드센터</a>
+      <a href="/pages/guide-admin.html">가이드센터 관리자</a>
+      <a href="/pages/settlement-dashboard.html">정산 대시보드</a>
+      <a href="/pages/settlement-providers.html">CP사 관리</a>
+      <a href="/pages/settlement-contracts.html">계약 관리</a>
+      <a href="/pages/settlement-products.html">상품 관리</a>
+      <a href="/pages/settlement-revenues.html">매출 관리</a>
+      <a href="/pages/settlement-import.html">CSV Import</a>
+      <a href="/pages/settlement-settlements.html">정산</a>
+      <a href="/pages/settlement-users.html">정산 시스템 사용자</a>
+      <a href="/pages/members.html">구성원 다운로드</a>
+      <a href="/pages/company-list.html">기업 리스트</a>
+      <a href="/pages/company-dashboard.html">기업 현황 대시보드</a>
+      <a href="/pages/doc-logs.html">매뉴얼 접속 로그</a>
+    </nav>
+  </aside>
+
+  <main class="main">
+  <div class="mail-editor">
+
+<div class="toolbar">
+  <div class="toolbar-title">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Z"/><path d="m22 7-10 5L2 7"/></svg>
+    독려 메일 에디터
+  </div>
+  <div class="tab-group">
+    <button class="tab-btn active" data-tab="basic" onclick="switchTab('basic')">일반</button>
+    <button class="tab-btn" data-tab="completion" onclick="switchTab('completion')">수료 기준</button>
+    <button class="tab-btn" data-tab="required" onclick="switchTab('required')">필수 강의</button>
+  </div>
+  <div class="toolbar-divider"></div>
+  <input id="bannerGifUrl" type="url" value="https://cdn.day1company.io/prod/uploads/202606/165600-1910/banner-mail.gif" title="HERO GIF URL" style="border:1px solid var(--line);border-radius:9px;padding:7px 12px;font-size:12px;font-family:inherit;color:var(--ink);width:200px;outline:none;">
+  <div class="toolbar-divider"></div>
+  <button class="btn" onclick="resetAll()" style="color:#DC2626;border-color:#FECACA">초기화</button>
+  <button class="btn" onclick="toggleVars()">변수 표시</button>
+  <button class="btn primary" onclick="copyHTML()">HTML 복사</button>
+</div>
+
+<!-- ============================================================ -->
+<!-- TAB 1: 일반 -->
+<!-- ============================================================ -->
+<div class="email active" id="email-basic">
+  <div class="hero">
+    <div class="hero-deco">
+      <div class="hcal">
+        <div class="hcal-head">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+          <div class="hcal-rdot"></div>
+        </div>
+        <div class="hcal-grid">
+          <div class="hcal-d"></div>
+          <div class="hcal-d"></div>
+          <div class="hcal-d"></div>
+          <div class="hcal-d"></div>
+          <div class="hcal-d"></div>
+          <div class="hcal-d"></div>
+          <div class="hcal-d p2"></div>
+          <div class="hcal-d p2"></div>
+          <div class="hcal-d cur"></div>
+          <div class="hcal-d near"></div>
+          <div class="hcal-d dl1"></div>
+          <div class="hcal-d dl"></div>
+        </div>
+      </div>
+      <div class="sw">
+        <div class="sw-btn"></div>
+        <div class="sw-body">
+          <div class="sw-inner">
+            <div class="sw-hand"></div>
+            <div class="sw-ctr"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="hero-head">
+      <div class="sf-logo">
+        <img class="sf-mark" src="https://skillflo-mail.vercel.app/skillflo_logo.png" alt="skillflo">
+        <span class="sf-name">skillflo</span>
+      </div>
+      <div class="sf-divider"></div>
+      <div class="sf-eyebrow" contenteditable="true">FASTCAMPUS ENTERPRISE</div>
+    </div>
+    <div class="hero-content">
+      <h1 class="hero-title" contenteditable="true">학습 기간 <b>안내</b></h1>
+      <div class="hero-meta">
+        <span class="dot"></span>
+        <span contenteditable="true">수강 현황 안내</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="greeting">
+    <div class="greeting-eyebrow">FROM</div>
+    <p class="greeting-text" contenteditable="true">안녕하세요, <b>${memberName}</b>님. <span class="from">패스트캠퍼스 기업교육팀</span> 입니다.<br>현재 수강 중인 과정의 학습 기간을 안내드립니다.</p>
+  </div>
+
+  <!-- 01 내 수강 일정 -->
+  <div class="section">
+    <div class="section-head">
+      <span class="section-num">01</span>
+      <h2 class="section-title" contenteditable="true">내 수강 일정</h2>
+    </div>
+    <div class="course-list" id="courseList-basic">
+      <div class="course-item">
+        <div class="course-label"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>과정명</div>
+        <div class="course-name" contenteditable="true">${coursePublicNames}</div>
+        <button class="course-del" onclick="delCourse(this)" title="삭제">×</button>
+      </div>
+    </div>
+    <button class="row-add" onclick="addCourse('courseList-basic')">＋ 과정 추가</button>
+    <div class="schedule-card">
+      <div class="sch-row">
+        <div class="sch-label">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+          학습 기간
+        </div>
+        <div class="sch-value" contenteditable="true">${courseStartedAt} ~ ${courseEndedAt}</div>
+      </div>
+    </div>
+    <div class="note-list">
+      <div class="note-item" contenteditable="true">추가 입과하신 경우 학습 시작일이 다를 수 있습니다.</div>
+    </div>
+  </div>
+
+  <!-- 02 수강하러 가기 -->
+  <div class="section section-flush">
+    <div class="section-head">
+      <span class="section-num">02</span>
+      <h2 class="section-title" contenteditable="true">수강하러 가기</h2>
+    </div>
+    <div class="access-box">
+      <div class="access-url-wrap">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        <span class="access-url" contenteditable="true">https://skillflo.io</span>
+      </div>
+      <a href="https://skillflo.io" target="_blank" class="access-cta">
+        <span contenteditable="true">수강하러 가기</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M7 7h10v10"/></svg>
+      </a>
+    </div>
+  </div>
+
+  <!-- 배너 -->
+  <div class="banner-wrap">
+    <a href="https://content-dashboard.skillflo.app/public" target="_blank" style="display:block;">
+      <img class="banner-img" src="배너.png" alt="배너" style="width:100%;display:block;">
+    </a>
+  </div>
+
+  <!-- 03 문의처 -->
+  <div class="section">
+    <div class="section-head">
+      <span class="section-num">03</span>
+      <h2 class="section-title" contenteditable="true">문의처</h2>
+    </div>
+    <div class="contact-grid">
+      <a href="https://skillflo.channel.io/workflows/102976" target="_blank" class="contact-box full">
+        <div class="contact-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></div>
+        <div class="contact-content"><div class="contact-label">채널톡</div><div class="contact-value" contenteditable="true">실시간 상담</div></div>
+      </a>
+      <a href="mailto:help.b2b@day1company.co.kr" class="contact-box">
+        <div class="contact-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Z"/><path d="m22 7-10 5L2 7"/></svg></div>
+        <div class="contact-content"><div class="contact-label">이메일</div><div class="contact-value" contenteditable="true">help.b2b@day1company.co.kr</div></div>
+      </a>
+      <a href="tel:02-508-0341" class="contact-box">
+        <div class="contact-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></div>
+        <div class="contact-content"><div class="contact-label">전화</div><div class="contact-value" contenteditable="true">02-508-0341</div></div>
+      </a>
+    </div>
+  </div>
+
+  <div class="footer">
+    <div class="footer-brand" contenteditable="true">패스트캠퍼스 기업교육</div>
+    <div contenteditable="true">서울특별시 강남구 테헤란로 231 센터필드 West 6층</div>
+    <div class="footer-divider"></div>
+    <div class="footer-note" contenteditable="true">본 메일은 패스트캠퍼스의 온라인 콘텐츠를 수강하시는 분들께 발송되었습니다.</div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- TAB 2: 수료 기준 -->
+<!-- ============================================================ -->
+<div class="email" id="email-completion">
+  <div class="hero">
+    <div class="hero-deco">
+      <div class="hcal">
+        <div class="hcal-head">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+          <div class="hcal-rdot"></div>
+        </div>
+        <div class="hcal-grid">
+          <div class="hcal-d"></div>
+          <div class="hcal-d"></div>
+          <div class="hcal-d"></div>
+          <div class="hcal-d"></div>
+          <div class="hcal-d"></div>
+          <div class="hcal-d"></div>
+          <div class="hcal-d p2"></div>
+          <div class="hcal-d p2"></div>
+          <div class="hcal-d cur"></div>
+          <div class="hcal-d near"></div>
+          <div class="hcal-d dl1"></div>
+          <div class="hcal-d dl"></div>
+        </div>
+      </div>
+      <div class="sw">
+        <div class="sw-btn"></div>
+        <div class="sw-body">
+          <div class="sw-inner">
+            <div class="sw-hand"></div>
+            <div class="sw-ctr"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="hero-head">
+      <div class="sf-logo">
+        <img class="sf-mark" src="https://skillflo-mail.vercel.app/skillflo_logo.png" alt="skillflo">
+        <span class="sf-name">skillflo</span>
+      </div>
+      <div class="sf-divider"></div>
+      <div class="sf-eyebrow" contenteditable="true">FASTCAMPUS ENTERPRISE</div>
+    </div>
+    <div class="hero-content">
+      <h1 class="hero-title" contenteditable="true">학습 기간 <b>안내</b></h1>
+      <div class="hero-meta">
+        <span class="dot"></span>
+        <span contenteditable="true">수강 현황 안내</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="greeting">
+    <div class="greeting-eyebrow">FROM</div>
+    <p class="greeting-text" contenteditable="true">안녕하세요, <b>${memberName}</b>님. <span class="from">패스트캠퍼스 기업교육팀</span> 입니다.<br>현재 수강 중인 과정의 학습 기간을 안내드립니다.</p>
+  </div>
+
+  <!-- 01 내 수강 일정 (수료 기준 포함) -->
+  <div class="section">
+    <div class="section-head">
+      <span class="section-num">01</span>
+      <h2 class="section-title" contenteditable="true">내 수강 일정</h2>
+    </div>
+    <div class="course-list" id="courseList-completion">
+      <div class="course-item">
+        <div class="course-label"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>과정명</div>
+        <div class="course-name" contenteditable="true">${coursePublicNames}</div>
+        <button class="course-del" onclick="delCourse(this)" title="삭제">×</button>
+      </div>
+    </div>
+    <button class="row-add" onclick="addCourse('courseList-completion')">＋ 과정 추가</button>
+    <div class="schedule-card">
+      <div class="sch-row">
+        <div class="sch-label">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+          학습 기간
+        </div>
+        <div class="sch-value" contenteditable="true">${courseStartedAt} ~ ${courseEndedAt}</div>
+      </div>
+      <div class="sch-row">
+        <div class="sch-label">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 11 3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          수료 기준
+        </div>
+        <div class="sch-value accent" contenteditable="true">${customMessage}</div>
+      </div>
+    </div>
+    <div class="note-list">
+      <div class="note-item" contenteditable="true">추가 입과하신 경우 학습 시작일이 다를 수 있습니다.</div>
+    </div>
+  </div>
+
+  <!-- 02 수강하러 가기 -->
+  <div class="section section-flush">
+    <div class="section-head">
+      <span class="section-num">02</span>
+      <h2 class="section-title" contenteditable="true">수강하러 가기</h2>
+    </div>
+    <div class="access-box">
+      <div class="access-url-wrap">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        <span class="access-url" contenteditable="true">https://skillflo.io</span>
+      </div>
+      <a href="https://skillflo.io" target="_blank" class="access-cta">
+        <span contenteditable="true">수강하러 가기</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M7 7h10v10"/></svg>
+      </a>
+    </div>
+  </div>
+
+  <div class="banner-wrap">
+    <a href="https://content-dashboard.skillflo.app/public" target="_blank" style="display:block;">
+      <img class="banner-img" src="배너.png" alt="배너" style="width:100%;display:block;">
+    </a>
+  </div>
+
+  <div class="section">
+    <div class="section-head">
+      <span class="section-num">03</span>
+      <h2 class="section-title" contenteditable="true">문의처</h2>
+    </div>
+    <div class="contact-grid">
+      <a href="https://skillflo.channel.io/workflows/102976" target="_blank" class="contact-box full">
+        <div class="contact-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></div>
+        <div class="contact-content"><div class="contact-label">채널톡</div><div class="contact-value" contenteditable="true">실시간 상담</div></div>
+      </a>
+      <a href="mailto:help.b2b@day1company.co.kr" class="contact-box">
+        <div class="contact-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Z"/><path d="m22 7-10 5L2 7"/></svg></div>
+        <div class="contact-content"><div class="contact-label">이메일</div><div class="contact-value" contenteditable="true">help.b2b@day1company.co.kr</div></div>
+      </a>
+      <a href="tel:02-508-0341" class="contact-box">
+        <div class="contact-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></div>
+        <div class="contact-content"><div class="contact-label">전화</div><div class="contact-value" contenteditable="true">02-508-0341</div></div>
+      </a>
+    </div>
+  </div>
+
+  <div class="footer">
+    <div class="footer-brand" contenteditable="true">패스트캠퍼스 기업교육</div>
+    <div contenteditable="true">서울특별시 강남구 테헤란로 231 센터필드 West 6층</div>
+    <div class="footer-divider"></div>
+    <div class="footer-note" contenteditable="true">본 메일은 패스트캠퍼스의 온라인 콘텐츠를 수강하시는 분들께 발송되었습니다.</div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- TAB 3: 필수 강의 -->
+<!-- ============================================================ -->
+<div class="email" id="email-required">
+  <div class="hero">
+    <div class="hero-deco">
+      <div class="hcal">
+        <div class="hcal-head">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+          <div class="hcal-rdot"></div>
+        </div>
+        <div class="hcal-grid">
+          <div class="hcal-d"></div>
+          <div class="hcal-d"></div>
+          <div class="hcal-d"></div>
+          <div class="hcal-d"></div>
+          <div class="hcal-d"></div>
+          <div class="hcal-d"></div>
+          <div class="hcal-d p2"></div>
+          <div class="hcal-d p2"></div>
+          <div class="hcal-d cur"></div>
+          <div class="hcal-d near"></div>
+          <div class="hcal-d dl1"></div>
+          <div class="hcal-d dl"></div>
+        </div>
+      </div>
+      <div class="sw">
+        <div class="sw-btn"></div>
+        <div class="sw-body">
+          <div class="sw-inner">
+            <div class="sw-hand"></div>
+            <div class="sw-ctr"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="hero-head">
+      <div class="sf-logo">
+        <img class="sf-mark" src="https://skillflo-mail.vercel.app/skillflo_logo.png" alt="skillflo">
+        <span class="sf-name">skillflo</span>
+      </div>
+      <div class="sf-divider"></div>
+      <div class="sf-eyebrow" contenteditable="true">FASTCAMPUS ENTERPRISE</div>
+    </div>
+    <div class="hero-content">
+      <h1 class="hero-title" contenteditable="true">학습 기간 <b>안내</b></h1>
+      <div class="hero-meta">
+        <span class="dot"></span>
+        <span contenteditable="true">수강 현황 안내</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="greeting">
+    <div class="greeting-eyebrow">FROM</div>
+    <p class="greeting-text" contenteditable="true">안녕하세요, <b>${memberName}</b>님. <span class="from">패스트캠퍼스 기업교육팀</span> 입니다.<br>현재 수강 중인 과정의 학습 기간을 안내드립니다.</p>
+  </div>
+
+  <!-- 01 내 수강 일정 (필수 강의 + 수료 기준) -->
+  <div class="section">
+    <div class="section-head">
+      <span class="section-num">01</span>
+      <h2 class="section-title" contenteditable="true">내 수강 일정</h2>
+    </div>
+    <div class="course-list" id="courseList-required">
+      <div class="course-item">
+        <div class="course-label"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>과정명</div>
+        <div class="course-name" contenteditable="true">${requiredCoursePublicNames}</div>
+        <button class="course-del" onclick="delCourse(this)" title="삭제">×</button>
+      </div>
+    </div>
+    <button class="row-add" onclick="addCourse('courseList-required')">＋ 과정 추가</button>
+    <div class="schedule-card">
+      <div class="sch-row">
+        <div class="sch-label">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+          전체 학습 기간
+        </div>
+        <div class="sch-value" contenteditable="true">${courseStartedAt} ~ ${courseEndedAt}</div>
+      </div>
+      <div class="sch-row">
+        <div class="sch-label">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v10l4 4"/><circle cx="12" cy="12" r="10"/></svg>
+          필수 학습 기간
+        </div>
+        <div class="sch-value accent" contenteditable="true">${requiredCourseStartedAt} ~ ${requiredCourseEndedAt}</div>
+      </div>
+      <div class="sch-row">
+        <div class="sch-label">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 11 3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          수료 기준
+        </div>
+        <div class="sch-value" contenteditable="true">${customMessage}</div>
+      </div>
+    </div>
+    <div class="note-list">
+      <div class="note-item" contenteditable="true">추가 입과 등을 이유로 학습 시작일이 다를 수 있습니다.</div>
+      <div class="note-item" contenteditable="true">필수 강의는 필수 학습 기간이 경과하더라도 전체 학습 기간 내 복습 가능합니다.</div>
+    </div>
+  </div>
+
+  <!-- 02 수강하러 가기 -->
+  <div class="section section-flush">
+    <div class="section-head">
+      <span class="section-num">02</span>
+      <h2 class="section-title" contenteditable="true">수강하러 가기</h2>
+    </div>
+    <div class="access-box">
+      <div class="access-url-wrap">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        <span class="access-url" contenteditable="true">https://skillflo.io</span>
+      </div>
+      <a href="https://skillflo.io" target="_blank" class="access-cta">
+        <span contenteditable="true">수강하러 가기</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M7 7h10v10"/></svg>
+      </a>
+    </div>
+  </div>
+
+  <div class="banner-wrap">
+    <a href="https://content-dashboard.skillflo.app/public" target="_blank" style="display:block;">
+      <img class="banner-img" src="배너.png" alt="배너" style="width:100%;display:block;">
+    </a>
+  </div>
+
+  <div class="section">
+    <div class="section-head">
+      <span class="section-num">03</span>
+      <h2 class="section-title" contenteditable="true">문의처</h2>
+    </div>
+    <div class="contact-grid">
+      <a href="https://skillflo.channel.io/workflows/102976" target="_blank" class="contact-box full">
+        <div class="contact-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></div>
+        <div class="contact-content"><div class="contact-label">채널톡</div><div class="contact-value" contenteditable="true">실시간 상담</div></div>
+      </a>
+      <a href="mailto:help.b2b@day1company.co.kr" class="contact-box">
+        <div class="contact-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Z"/><path d="m22 7-10 5L2 7"/></svg></div>
+        <div class="contact-content"><div class="contact-label">이메일</div><div class="contact-value" contenteditable="true">help.b2b@day1company.co.kr</div></div>
+      </a>
+      <a href="tel:02-508-0341" class="contact-box">
+        <div class="contact-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></div>
+        <div class="contact-content"><div class="contact-label">전화</div><div class="contact-value" contenteditable="true">02-508-0341</div></div>
+      </a>
+    </div>
+  </div>
+
+  <div class="footer">
+    <div class="footer-brand" contenteditable="true">패스트캠퍼스 기업교육</div>
+    <div contenteditable="true">서울특별시 강남구 테헤란로 231 센터필드 West 6층</div>
+    <div class="footer-divider"></div>
+    <div class="footer-note" contenteditable="true">본 메일은 패스트캠퍼스의 온라인 콘텐츠를 수강하시는 분들께 발송되었습니다.</div>
+  </div>
+</div>
+
+<div class="toast" id="toast">HTML이 클립보드에 복사되었습니다</div>
+
+  </div>
+  </main>
+
+  <script src="/js/layout.js"></script>
+<script>
+let activeTab = 'basic';
+let varsVisible = true;
+const originals = {};
+document.addEventListener('DOMContentLoaded', () => {
+  ['basic','completion','required'].forEach(t => {
+    originals[t] = document.getElementById('email-' + t).innerHTML;
+  });
+});
+
+function resetAll(){
+  if(!confirm('모든 내용을 초기 상태로 되돌릴까요?')) return;
+  ['basic','completion','required'].forEach(t => {
+    document.getElementById('email-' + t).innerHTML = originals[t];
+  });
+  varsVisible = true;
+}
+
+function switchTab(tab) {
+  activeTab = tab;
+  document.querySelectorAll('.email').forEach(e => e.classList.remove('active'));
+  document.getElementById('email-' + tab).classList.add('active');
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.tab === tab);
+  });
+}
+
+function toggleVars() {
+  varsVisible = !varsVisible;
+  const varMap = {
+    'memberName': '홍길동',
+    'coursePublicNames': 'AI 리터러시 입문',
+    'requiredCoursePublicNames': 'AI 리터러시 입문',
+    'courseStartedAt': '2026.05.21',
+    'courseEndedAt': '2026.07.20',
+    'requiredCourseStartedAt': '2026.05.21',
+    'requiredCourseEndedAt': '2026.06.20',
+    'customMessage': '필수 강의 100% 수강 완료',
+  };
+  document.querySelectorAll('.email [contenteditable]').forEach(el => {
+    if (!varsVisible) {
+      el.dataset.original = el.dataset.original || el.innerHTML;
+      let html = el.innerHTML;
+      for (const [key, val] of Object.entries(varMap)) {
+        html = html.replace(new RegExp('\\$\\{' + key + '\\}', 'g'), val);
+      }
+      el.innerHTML = html;
+    } else {
+      if (el.dataset.original) {
+        el.innerHTML = el.dataset.original;
+        delete el.dataset.original;
+      }
+    }
+  });
+}
+
+function addCourse(listId) {
+  const list = document.getElementById(listId);
+  const item = document.createElement('div');
+  item.className = 'course-item';
+  item.innerHTML = `
+    <div class="course-label"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>과정명</div>
+    <div class="course-name" contenteditable="true">과정명을 입력하세요</div>
+    <button class="course-del" onclick="delCourse(this)" title="삭제">×</button>
+  `;
+  list.appendChild(item);
+  item.querySelector('.course-name').focus();
+}
+
+function delCourse(btn) {
+  const item = btn.closest('.course-item');
+  const list = item.parentElement;
+  if (list.querySelectorAll('.course-item').length <= 1) {
+    alert('최소 1개 과정은 남겨야 합니다.');
+    return;
+  }
+  item.remove();
+}
+
+function copyHTML() {
+  const email = document.getElementById('email-' + activeTab);
+
+  const AC='#1E3A8A',ACS='#EEF2F9',INK='#0E1726',INK2='#475569',INK3='#94A3B8',
+        LINE='#E5E7EB',WARN='#92400E',WARNS='#FEF6E4',W='#FFFFFF',BG='#F4F4F2',
+        LOGO='https://skillflo-mail.vercel.app/skillflo_logo.png',
+        ICONS='https://skillflo-mail.vercel.app/icons',
+        F="-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sans KR','Malgun Gothic',sans-serif";
+  const SF=`font-family:${F};`;
+  const SZ=`font-size:0;line-height:0;mso-line-height-rule:exactly;padding:0;`;
+
+  // ── 값 읽기 ──
+  const eyebrow  = email.querySelector('.sf-eyebrow')?.textContent.trim()||'FASTCAMPUS ENTERPRISE';
+  const heroTitle= email.querySelector('.hero-title')?.textContent.replace(/\s+/g,' ').trim()||'학습 기간 안내';
+  const heroMeta = email.querySelector('.hero-meta span:last-child')?.textContent.trim()||'수강 현황 안내';
+  const greeting = email.querySelector('.greeting-text')?.innerHTML
+    .replace(/<span class="from">/g,`<span style="display:inline-block;padding:2px 8px;background:${ACS};color:${AC};font-size:12px;font-weight:700;border-radius:4px;margin:0 2px;">`)
+    .trim()||'';
+
+  const courses=[];
+  email.querySelectorAll('.course-name').forEach(el=>courses.push(el.textContent.trim()));
+
+  const schRows=[];
+  email.querySelectorAll('.sch-row').forEach(r=>{
+    const label=r.querySelector('.sch-label')?.textContent.replace(/\s+/g,' ').trim()||'';
+    const vEl=r.querySelector('.sch-value');
+    schRows.push({label, val:vEl?.textContent.trim()||'', isAc:vEl?.classList.contains('accent')||false});
+  });
+
+  const notes=[];
+  email.querySelectorAll('.note-item').forEach(el=>notes.push(el.textContent.trim()));
+
+  const s01title=email.querySelectorAll('.section-title')[0]?.textContent.trim()||'내 수강 일정';
+  const s02title=email.querySelectorAll('.section-title')[1]?.textContent.trim()||'수강하러 가기';
+  const s03title=email.querySelectorAll('.section-title')[2]?.textContent.trim()||'문의처';
+
+  const accessUrl =email.querySelector('.access-url')?.textContent.trim()||'https://skillflo.io';
+  const accessHref=email.querySelector('.access-cta')?.getAttribute('href')||accessUrl;
+  const accessCta =email.querySelector('.access-cta span')?.textContent.trim()||'수강하러 가기';
+
+  const cbs=email.querySelectorAll('.contact-box');
+  const ch={href:cbs[0]?.getAttribute('href')||'',val:cbs[0]?.querySelector('.contact-value')?.textContent.trim()||''};
+  const em={href:cbs[1]?.getAttribute('href')||'',val:cbs[1]?.querySelector('.contact-value')?.textContent.trim()||''};
+  const tel={href:cbs[2]?.getAttribute('href')||'',val:cbs[2]?.querySelector('.contact-value')?.textContent.trim()||''};
+
+  const fbrand=email.querySelector('.footer-brand')?.textContent.trim()||'';
+  let faddr=''; for(const c of email.querySelector('.footer')?.children||[]){
+    if(!c.classList.contains('footer-brand')&&!c.classList.contains('footer-divider')&&!c.classList.contains('footer-note')){faddr=c.textContent.trim();break;}
+  }
+  const fnote=email.querySelector('.footer-note')?.textContent.trim()||'';
+
+  // ── 빌더 ──
+  function row(html,pad='5px 32px',bg=W){
+    const p=pad.replace(/px/g,'').trim().split(/\s+/).map(Number);
+    const pt=p[0]||5,pr=p[1]||32,pb=p[2]!==undefined?p[2]:pt,pl=p[3]!==undefined?p[3]:pr;
+    return `<tr><td colspan="3" height="${pt}" bgcolor="${bg}" style="background-color:${bg};${SZ}"> </td></tr>
+<tr>
+  <td width="${pl}" bgcolor="${bg}" style="background-color:${bg};padding:0;font-size:0;"> </td>
+  <td bgcolor="${bg}" style="background-color:${bg};padding:0;vertical-align:top;">${html}</td>
+  <td width="${pr}" bgcolor="${bg}" style="background-color:${bg};padding:0;font-size:0;"> </td>
+</tr>
+<tr><td colspan="3" height="${pb}" bgcolor="${bg}" style="background-color:${bg};${SZ}"> </td></tr>`;
+  }
+  function divider(){return `<tr><td colspan="3" height="1" bgcolor="${LINE}" style="background-color:${LINE};${SZ}"> </td></tr>`;}
+  function secHead(num,title){
+    return `<table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:8px;"><tbody><tr>
+      <td width="26" height="26" bgcolor="${ACS}" align="center" valign="middle" style="background-color:${ACS};width:26px;height:26px;text-align:center;vertical-align:middle;font-size:11px;font-weight:bold;color:${AC};${SF}">${num}</td>
+      <td style="padding-left:8px;"><p style="margin:0;font-size:16px;color:#000000;${SF}"><b>${title}</b></p></td>
+    </tr></tbody></table>`;
+  }
+  function ic(name,size=13){return `<img src="${ICONS}/${name}.svg" width="${size}" height="${size}" style="display:inline;vertical-align:middle;margin-right:5px;" border="0">`;}
+  function noteBlock(list){
+    if(!list.length) return '';
+    return `<table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-top:6px;"><tbody>
+      <tr><td bgcolor="${WARNS}" style="background-color:${WARNS};padding:5px 12px;border-radius:8px;">
+        ${list.map(n=>`<p style="margin:0;line-height:1.5;font-size:11px;color:${WARN};${SF}"><b>· ${n}</b></p>`).join('')}
+      </td></tr></tbody></table>`;
+  }
+  function ccCard(label,val,href,iconName,w=290){
+    return `<td width="${w}" style="vertical-align:top;padding:2px;">
+      <table border="0" cellpadding="0" cellspacing="0" width="100%"><tbody>
+        <tr><td bgcolor="${ACS}" style="background-color:${ACS};padding:6px 10px;border-radius:8px;">
+          <p style="margin:0 0 2px 0;font-size:11px;color:${INK};${SF}"><b>${ic(iconName,12)}${label}</b></p>
+          <p style="margin:0;font-size:12px;${SF}"><a href="${href}" target="_blank" style="color:${AC};text-decoration:none;"><b>${val}</b></a></p>
+        </td></tr></tbody></table></td>`;
+  }
+
+  // 강의 목록
+  const courseTR=courses.map((c,i)=>{
+    const sep=i>0?`<tr><td colspan="2" bgcolor="#D1D5DB" style="background-color:#D1D5DB;height:1px;${SZ}"> </td></tr>`:'';
+    return `${sep}<tr>
+      <td width="90" bgcolor="${W}" style="background-color:${W};vertical-align:top;padding:8px 14px;">
+        <p style="margin:0;font-size:13px;color:${INK};${SF}"><b>${ic('book')}과정명</b></p>
+      </td>
+      <td bgcolor="${W}" style="background-color:${W};vertical-align:top;padding:8px 14px;">
+        <p style="margin:0;font-size:13px;color:${INK};${SF}"><b>${c}</b></p>
+      </td>
+    </tr>`;
+  }).join('');
+
+  // 스케줄 행
+  const schIconMap={'학습 기간':'calendar','전체 학습 기간':'calendar','필수 학습 기간':'refresh','수료 기준':'check'};
+  const schTR=schRows.map((r,i)=>{
+    const sep=i>0?`<tr><td colspan="2" bgcolor="#D1D5DB" style="background-color:#D1D5DB;height:1px;${SZ}"> </td></tr>`:'';
+    const ico=schIconMap[r.label]?ic(schIconMap[r.label]):'';
+    return `${sep}<tr>
+      <td width="130" bgcolor="${W}" style="background-color:${W};vertical-align:top;padding:6px 14px;"><p style="margin:0;font-size:13px;color:${INK};${SF}"><b>${ico}${r.label}</b></p></td>
+      <td bgcolor="${W}" style="background-color:${W};vertical-align:top;padding:6px 14px;"><p style="margin:0;font-size:13px;color:${r.isAc?AC:INK};${SF}"><b>${r.val}</b></p></td>
+    </tr>`;
+  }).join('');
+
+  // HERO
+  const bannerUrl=document.getElementById('bannerGifUrl')?.value.trim();
+  const heroRows=bannerUrl
+    ?`<tr><td colspan="3" style="padding:0;font-size:0;line-height:0;"><img src="${bannerUrl}" width="640" style="width:100%;max-width:640px;display:block;border:0;" border="0"></td></tr>`
+    :`<tr><td colspan="3" height="8" bgcolor="${AC}" style="background-color:${AC};${SZ}"> </td></tr>
+<tr>
+  <td width="32" bgcolor="${AC}" style="background-color:${AC};padding:0;font-size:0;"> </td>
+  <td bgcolor="${AC}" style="background-color:${AC};padding:20px 0 6px;">
+    <img src="${LOGO}" width="26" height="26" style="display:inline;vertical-align:middle;margin-right:8px;" border="0">
+    <span style="font-size:13px;font-weight:700;color:${W};vertical-align:middle;${SF}">skillflo</span>
+    <span style="color:#8BAAD4;margin:0 8px;vertical-align:middle;">|</span>
+    <span style="font-size:11px;font-weight:600;color:#B0C4DE;vertical-align:middle;${SF}">${eyebrow}</span>
+  </td>
+  <td width="32" bgcolor="${AC}" style="background-color:${AC};padding:0;font-size:0;"> </td>
+</tr>
+<tr>
+  <td width="32" bgcolor="${AC}" style="background-color:${AC};padding:0;font-size:0;"> </td>
+  <td bgcolor="${AC}" style="background-color:${AC};padding:8px 0 6px;font-size:26px;font-weight:700;color:${W};line-height:1.35;${SF}">${heroTitle}</td>
+  <td width="32" bgcolor="${AC}" style="background-color:${AC};padding:0;font-size:0;"> </td>
+</tr>
+<tr>
+  <td width="32" bgcolor="${AC}" style="background-color:${AC};padding:0;font-size:0;"> </td>
+  <td bgcolor="${AC}" style="background-color:${AC};padding:6px 0 24px;">
+    <table border="0" cellpadding="0" cellspacing="0"><tbody><tr>
+      <td bgcolor="#2D5AA0" style="background-color:#2D5AA0;padding:4px 14px;border-radius:20px;">
+        <p style="margin:0;font-size:12px;font-weight:600;color:${W};${SF}">${heroMeta}</p>
+      </td></tr></tbody></table>
+  </td>
+  <td width="32" bgcolor="${AC}" style="background-color:${AC};padding:0;font-size:0;"> </td>
+</tr>
+<tr><td colspan="3" height="4" bgcolor="${AC}" style="background-color:${AC};${SZ}"> </td></tr>`;
+
+  const allRows=[
+    heroRows,
+    row(`<p style="margin:0 0 6px 0;font-size:11px;font-weight:700;color:${INK3};letter-spacing:.06em;${SF}">FROM</p>
+         <p style="margin:0;font-size:14px;color:${INK};line-height:1.7;${SF}"><b>${greeting}</b></p>`,'10px 32px 8px'),
+    divider(),
+    row(`${secHead('01',s01title)}
+      <table border="0" cellpadding="0" cellspacing="0" width="100%" style="border:1px solid ${LINE};border-radius:8px;border-collapse:separate;"><tbody>${courseTR}</tbody></table>
+      <table border="0" cellpadding="0" cellspacing="0" width="100%" style="border:1px solid ${LINE};border-radius:8px;border-collapse:separate;margin-top:8px;"><tbody>${schTR}</tbody></table>
+      ${noteBlock(notes)}`,'5px 32px'),
+    divider(),
+    row(`${secHead('02',s02title)}
+      <table border="0" cellpadding="0" cellspacing="0" width="100%"><tbody><tr>
+        <td bgcolor="${ACS}" style="background-color:${ACS};padding:10px 14px;border-radius:8px;">
+          <table border="0" cellpadding="0" cellspacing="0" width="100%"><tbody><tr>
+            <td style="font-size:13px;font-weight:bold;color:${AC};${SF}"><b>${accessUrl}</b></td>
+            <td style="text-align:right;white-space:nowrap;">
+              <a href="${accessHref}" target="_blank" style="display:inline-block;background-color:${AC};color:${W};font-size:12px;font-weight:bold;padding:7px 14px;text-decoration:none;${SF}"><b>${accessCta} ↗</b></a>
+            </td></tr></tbody></table>
+        </td></tr></tbody></table>`,'5px 32px'),
+    `<tr><td colspan="3" style="padding:0 32px 16px;font-size:0;line-height:0;"><a href="https://content-dashboard.skillflo.app/public" target="_blank" style="display:block;"><img src="https://skillflo-mail.vercel.app/배너.png" width="576" alt="배너" style="width:100%;max-width:576px;display:block;border:0;border-radius:8px;" border="0"></a></td></tr>`,
+    divider(),
+    row(`${secHead('03',s03title)}
+      <table border="0" cellpadding="0" cellspacing="0" width="100%"><tbody>
+        <tr>${ccCard('채널톡',ch.val,ch.href,'chat')}${ccCard('이메일',em.val,em.href,'mail')}</tr>
+        <tr>${ccCard('전화',tel.val,tel.href,'phone',290)}</tr>
+      </tbody></table>`,'5px 32px'),
+    divider(),
+    row(`<table border="0" cellpadding="0" cellspacing="0" width="100%"><tbody><tr>
+      <td align="center" style="text-align:center;">
+        <p style="margin:0 0 3px 0;font-size:13px;color:${INK};text-align:center;${SF}"><b>${fbrand}</b></p>
+        <p style="margin:0 0 4px 0;font-size:11px;color:${INK3};text-align:center;${SF}">${faddr}</p>
+        <p style="margin:0;font-size:11px;color:${INK3};text-align:center;${SF}">${fnote}</p>
+      </td></tr></tbody></table>`,'10px 32px'),
+  ].join('');
+
+  const html=
+    `<table border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="${BG}" style="background-color:${BG};">` +
+    `<tbody><tr><td align="center" style="padding:20px 0;">` +
+    `<table border="0" cellpadding="0" cellspacing="0" width="640" bgcolor="${W}" style="max-width:640px;background-color:${W};">` +
+    `<tbody>`+allRows+`</tbody>` +
+    `</table></td></tr></tbody></table>`;
+
+  navigator.clipboard.writeText(html).then(showToast).catch(()=>{
+    const ta=document.createElement('textarea');
+    ta.value=html; document.body.appendChild(ta);
+    ta.select(); document.execCommand('copy');
+    document.body.removeChild(ta); showToast();
+  });
+}
+
+function showToast() {
+  const t = document.getElementById('toast');
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+</script>
+</body>
+</html>

@@ -1,4 +1,4 @@
-const { generateReport, buildExportWorkbook } = require('../services/resultReportService');
+const { generateReport } = require('../services/resultReportService');
 
 async function handleResultReportRoutes(req, res, { parseMultipart, sendJson }) {
   // POST /api/result-report/generate
@@ -23,31 +23,9 @@ async function handleResultReportRoutes(req, res, { parseMultipart, sendJson }) 
         dailyBuffer: daily.data,
         totalEnrolled: Number(totalEnrolledPart.data.toString('utf-8').trim()),
       });
-      global._resultReportData = report;
       sendJson(res, 200, { success: true, report });
     } catch (err) {
       sendJson(res, 400, { error: err.message });
-    }
-    return;
-  }
-
-  // GET /api/result-report/export
-  if (req.method === 'GET' && req.url === '/api/result-report/export') {
-    const report = global._resultReportData;
-    if (!report) {
-      return sendJson(res, 400, { error: '먼저 리포트를 생성해주세요.' });
-    }
-    try {
-      const buffer = buildExportWorkbook(report);
-      const filename = encodeURIComponent(`${report.company || '결과'}_결과보고서.xlsx`);
-      res.writeHead(200, {
-        'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'Content-Disposition': `attachment; filename*=UTF-8''${filename}`,
-        'Content-Length': buffer.length,
-      });
-      res.end(buffer);
-    } catch (err) {
-      sendJson(res, 500, { error: err.message });
     }
     return;
   }

@@ -6,6 +6,8 @@
   <title>Web Tools - 결과 보고서</title>
   <link rel="stylesheet" href="/css/style.css">
   <link rel="stylesheet" href="/css/result-report.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/exceljs@4.3.0/dist/exceljs.min.js"></script>
 </head>
 <body>
   <div class="topbar">
@@ -16,13 +18,25 @@
     <h1>Web Tools</h1>
     <nav>
       <a href="/">홈</a>
-      <a href="/pages/ipgwa.html">입과 템플릿 변환</a>
       <a href="/pages/lecture-info.html">강의 정보 정리</a>
       <a href="/pages/recommend.html">강의 추천</a>
       <a href="/pages/catalog.html">과정 리스트</a>
       <a href="/pages/categorize.html">카테고리 자동 분류</a>
-      <a href="/pages/report.html">콘텐츠 현황</a>
       <a href="/pages/result-report.html" class="active">결과 보고서</a>
+      <a href="/pages/enrollment-report.html">수강 리포트</a>
+      <a href="/pages/mail-guide.html">수강안내메일 에디터</a>
+      <a href="/pages/mail-encourage.html">독려메일 에디터</a>
+      <a href="/pages/package-guide.html">패키지강의 생성 가이드</a>
+      <a href="/pages/guide-public.html">가이드센터</a>
+      <a href="/pages/guide-admin.html">가이드센터 관리자</a>
+      <a href="/pages/settlement-dashboard.html">정산 대시보드</a>
+      <a href="/pages/settlement-providers.html">CP사 관리</a>
+      <a href="/pages/settlement-contracts.html">계약 관리</a>
+      <a href="/pages/settlement-products.html">상품 관리</a>
+      <a href="/pages/settlement-revenues.html">매출 관리</a>
+      <a href="/pages/settlement-import.html">CSV Import</a>
+      <a href="/pages/settlement-settlements.html">정산</a>
+      <a href="/pages/settlement-users.html">정산 시스템 사용자</a>
       <a href="/pages/members.html">구성원 다운로드</a>
       <a href="/pages/company-list.html">기업 리스트</a>
       <a href="/pages/company-dashboard.html">기업 현황 대시보드</a>
@@ -34,64 +48,119 @@
     <h2>결과 보고서</h2>
     <p class="desc">Skillflo에서 내려받은 raw data 3종을 업로드하면 수강 강의 현황부터 시간대별 접속 유저수까지 자동으로 계산해 보여줍니다. 기업/기간(월별·분기별)에 상관없이 사용할 수 있습니다.</p>
 
-    <div class="rr-upload-grid">
-      <div class="rr-upload-slot" data-slot="enrollment">
-        <div class="upload-area" id="uploadArea-enrollment">
-          <input type="file" id="fileInput-enrollment" accept=".csv">
-          <div class="icon">📄</div>
-          <p>개인별 수강 이력</p>
-          <p style="font-size:12px; color:var(--text-muted); margin-top:4px;">Skillflo 수강 이력 raw data (.csv)</p>
-          <div class="filename" id="fileName-enrollment"></div>
+    <div class="rr-card">
+      <h3 data-num="1">원본 데이터 업로드</h3>
+      <div class="rr-upload-grid">
+        <div class="rr-upload-slot" data-slot="enrollment">
+          <div class="upload-area" id="uploadArea-enrollment">
+            <input type="file" id="fileInput-enrollment" accept=".csv">
+            <div class="icon">📄</div>
+            <p>개인별 수강 이력</p>
+            <p style="font-size:12px; color:var(--text-muted); margin-top:4px;">Skillflo 수강 이력 raw data (.csv)</p>
+            <div class="filename" id="fileName-enrollment"></div>
+          </div>
         </div>
-      </div>
-      <div class="rr-upload-slot" data-slot="hourly">
-        <div class="upload-area" id="uploadArea-hourly">
-          <input type="file" id="fileInput-hourly" accept=".csv">
-          <div class="icon">🕐</div>
-          <p>통합 대시보드 - 시간대별 표</p>
-          <p style="font-size:12px; color:var(--text-muted); margin-top:4px;">시간대, 계정수 등 (.csv)</p>
-          <div class="filename" id="fileName-hourly"></div>
+        <div class="rr-upload-slot" data-slot="hourly">
+          <div class="upload-area" id="uploadArea-hourly">
+            <input type="file" id="fileInput-hourly" accept=".csv">
+            <div class="icon">🕐</div>
+            <p>통합 대시보드 - 시간대별 표</p>
+            <p style="font-size:12px; color:var(--text-muted); margin-top:4px;">시간대, 계정수 등 (.csv)</p>
+            <div class="filename" id="fileName-hourly"></div>
+          </div>
         </div>
-      </div>
-      <div class="rr-upload-slot" data-slot="daily">
-        <div class="upload-area" id="uploadArea-daily">
-          <input type="file" id="fileInput-daily" accept=".csv">
-          <div class="icon">📅</div>
-          <p>통합 대시보드 - 날짜별 표</p>
-          <p style="font-size:12px; color:var(--text-muted); margin-top:4px;">기준 일자, 계정수 등 (.csv)</p>
-          <div class="filename" id="fileName-daily"></div>
+        <div class="rr-upload-slot" data-slot="daily">
+          <div class="upload-area" id="uploadArea-daily">
+            <input type="file" id="fileInput-daily" accept=".csv">
+            <div class="icon">📅</div>
+            <p>통합 대시보드 - 날짜별 표</p>
+            <p style="font-size:12px; color:var(--text-muted); margin-top:4px;">기준 일자, 계정수 등 (.csv)</p>
+            <div class="filename" id="fileName-daily"></div>
+          </div>
         </div>
       </div>
     </div>
 
-    <div class="rr-input-group">
-      <label for="totalEnrolledInput">총 입과인원</label>
-      <input type="number" id="totalEnrolledInput" min="1" placeholder="예: 496">
-      <p class="rr-hint">수강 중 인원은 raw data에서 자동 집계되고, 미수강 인원·수강 비중은 여기 입력한 총 입과인원 기준으로 계산됩니다.</p>
+    <div class="rr-card">
+      <h3 data-num="2">교육 과정 개요</h3>
+      <div class="rr-grid">
+        <div class="input-group">
+          <label for="companyNameInput">기업명</label>
+          <input type="text" id="companyNameInput" placeholder="파일 업로드 시 자동 입력">
+        </div>
+        <div class="input-group">
+          <label for="courseNameInput">과정명</label>
+          <input type="text" id="courseNameInput" placeholder="예: 커스텀 50개 과정">
+        </div>
+        <div class="input-group">
+          <label for="periodInput">교육 기간</label>
+          <input type="text" id="periodInput" placeholder="파일 업로드 시 자동 입력, 수정 가능">
+        </div>
+        <div class="input-group">
+          <label for="totalEnrolledInput">총 입과인원</label>
+          <input type="number" id="totalEnrolledInput" min="1" placeholder="예: 496">
+        </div>
+      </div>
+      <p class="rr-hint">수강 중 인원은 raw data에서 자동 집계되고, 미수강 인원·수강 비중은 총 입과인원 기준으로 계산됩니다.</p>
     </div>
 
-    <button class="btn btn-primary" id="generateBtn" disabled>결과 보고서 생성</button>
+    <div class="rr-card">
+      <h3 data-num="3">운영 사항</h3>
+      <div class="rr-checkbox-group">
+        <label><input type="checkbox" id="chk_none"> 독려없음</label>
+        <label><input type="checkbox" id="chk_sms"> SMS</label>
+        <label><input type="checkbox" id="chk_email" checked> E-mail</label>
+        <label><input type="checkbox" id="chk_kakao" checked> 알림톡</label>
+      </div>
+      <label for="encourageDetail" style="display:block; font-size:13px; font-weight:600; color:var(--text); margin-bottom:8px;">독려 상세</label>
+      <textarea id="encourageDetail" class="rr-textarea">- 매월 2회(10,25일) 정기 학습 독려 메일/알림톡 발송</textarea>
+
+      <label style="display:block; font-size:13px; font-weight:600; color:var(--text); margin-bottom:8px;">독려 이미지 첨부 <span style="color:var(--text-muted); font-weight:400;">(메일·알림톡 캡처 등, 여러 장 가능)</span></label>
+      <div class="upload-area rr-img-dropzone" id="dz-opimg">
+        <input type="file" id="opImgFile" accept="image/*" multiple>
+        <div class="icon">🖼️</div>
+        <p>이미지를 드래그·클릭·Ctrl+V로 첨부</p>
+        <div class="filename" id="opImgName" style="display:none;"></div>
+      </div>
+      <div class="rr-img-thumb-grid" id="opImgPreview"></div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary" id="generateBtn" disabled>결과 보고서 생성</button>
+      <button class="btn btn-secondary" id="pdfBtn" disabled>PDF 다운로드</button>
+      <button class="btn btn-secondary" id="xlsxBtn" disabled>XLSX 다운로드</button>
+      <button type="button" class="btn btn-ghost" id="resetBtn">저장값 초기화</button>
+    </div>
 
     <div class="status" id="status"></div>
 
-    <div id="rrResults" class="rr-results" style="display:none;">
-      <div class="rr-results-header">
-        <h3 id="rrTitle"></h3>
-        <button class="btn-download-original" id="downloadBtn">엑셀 다운로드</button>
-      </div>
+    <div id="rrReport" class="rr-report">
+      <h1 class="rr-report-title" id="rrTitle"></h1>
 
-      <section class="rr-section">
-        <h4>1. 수강 강의 현황</h4>
+      <section class="rr-block">
+        <h2 class="rr-block-section">1. 교육 과정 개요</h2>
+        <table class="rr-table">
+          <tr><th style="width:20%">기업명</th><td id="r_company"></td></tr>
+          <tr><th>과정명</th><td id="r_course"></td></tr>
+          <tr><th>교육 기간</th><td id="r_period"></td></tr>
+        </table>
+      </section>
 
-        <h5>1-1. 인기 카테고리</h5>
-        <div class="rr-table-wrap">
-          <table class="rr-table">
-            <thead><tr><th>No.</th><th>카테고리</th><th>수강 비중</th></tr></thead>
-            <tbody id="tbl-category"></tbody>
-          </table>
+      <section class="rr-block">
+        <h2 class="rr-block-section">2. 수강 강의 상세 현황</h2>
+
+        <h3 class="rr-block-subsection">2-1. 인기 카테고리</h3>
+        <div class="rr-two-col">
+          <div class="rr-table-wrap">
+            <table class="rr-table">
+              <thead><tr><th>No.</th><th>카테고리</th><th>수강 비중</th></tr></thead>
+              <tbody id="tbl-category"></tbody>
+            </table>
+          </div>
+          <div class="rr-chart-wrap"><canvas id="chart-category"></canvas></div>
         </div>
 
-        <h5>1-2. 인기강의 top 5 (수강 시간 기준)</h5>
+        <h3 class="rr-block-subsection">2-2. 인기강의 top 5 (수강 시간 기준)</h3>
         <div class="rr-table-wrap">
           <table class="rr-table">
             <thead><tr><th>No.</th><th>카테고리</th><th>강의명</th><th>수강 시간</th></tr></thead>
@@ -99,7 +168,7 @@
           </table>
         </div>
 
-        <h5>1-3. 인기강의 top 5 (수강 인원 기준)</h5>
+        <h3 class="rr-block-subsection">2-3. 인기강의 top 5 (수강 인원 기준)</h3>
         <div class="rr-table-wrap">
           <table class="rr-table">
             <thead><tr><th>No.</th><th>카테고리</th><th>강의명</th><th>수강 인원</th></tr></thead>
@@ -108,18 +177,23 @@
         </div>
       </section>
 
-      <section class="rr-section">
-        <h4>2. 수강생 현황</h4>
+      <section class="rr-block">
+        <h2 class="rr-block-section">3. 수강생 현황</h2>
 
-        <h5>2-1. 수강 현황</h5>
-        <div class="rr-table-wrap">
-          <table class="rr-table">
-            <thead><tr><th>총 수강인원</th><th>수강 중 인원</th><th>미수강 인원</th><th>수강 비중(%)</th></tr></thead>
-            <tbody id="tbl-status"></tbody>
-          </table>
+        <h3 class="rr-block-subsection">3-1. 수강 현황</h3>
+        <div class="rr-two-col">
+          <div>
+            <div class="rr-table-wrap">
+              <table class="rr-table">
+                <thead><tr><th>총 수강인원</th><th>수강 중 인원</th><th>미수강 인원</th><th>수강 비중(%)</th></tr></thead>
+                <tbody id="tbl-status"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="rr-chart-wrap"><canvas id="chart-status"></canvas></div>
         </div>
 
-        <h5>2-2. 주요 우수 수강생 top 5 (수강 시간 기준)</h5>
+        <h3 class="rr-block-subsection">3-2. 주요 우수 수강생 top 5 (수강 시간 기준)</h3>
         <div class="rr-table-wrap">
           <table class="rr-table">
             <thead><tr><th>No.</th><th>이름</th><th>이메일</th><th>직급</th><th>부서</th><th>수강시간</th></tr></thead>
@@ -127,7 +201,8 @@
           </table>
         </div>
 
-        <h5>2-3. 요일 별 접속 유저수</h5>
+        <h3 class="rr-block-subsection">3-3. 요일 별 접속 유저수</h3>
+        <div class="rr-chart-wrap"><canvas id="chart-weekday"></canvas></div>
         <div class="rr-table-wrap">
           <table class="rr-table rr-table-pivot">
             <thead><tr id="thead-weekday"></tr></thead>
@@ -135,14 +210,28 @@
           </table>
         </div>
 
-        <h5>2-4. 시간대 별 접속 유저수</h5>
+        <h3 class="rr-block-subsection">3-4. 시간대 별 접속 유저수</h3>
+        <div class="rr-chart-wrap"><canvas id="chart-hourly"></canvas></div>
         <div class="rr-table-wrap">
           <table class="rr-table rr-table-pivot">
             <thead><tr id="thead-hourly"></tr></thead>
             <tbody id="tbl-hourly"></tbody>
           </table>
         </div>
-        <p class="rr-hint" id="hourlyAverage"></p>
+        <p class="rr-report-note" id="hourlyAverage"></p>
+      </section>
+
+      <section class="rr-block">
+        <h2 class="rr-block-section">4. 온라인 수강 운영 사항</h2>
+        <p class="rr-report-note" id="r_periodDesc" style="margin-bottom:12px;"></p>
+        <table class="rr-table">
+          <tr><th style="width:20%">학습관리</th><td id="r_manage"></td></tr>
+          <tr><th>독려상세</th><td id="r_encourage"></td></tr>
+        </table>
+        <div id="r_opimgs" style="display:none;">
+          <h3 class="rr-block-subsection">4-2. 독려 이미지</h3>
+          <div id="r_opimgs_container"></div>
+        </div>
       </section>
     </div>
   </main>

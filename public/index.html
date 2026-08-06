@@ -41,13 +41,25 @@
     <h1>Web Tools</h1>
     <nav>
       <a href="/" class="active">홈</a>
-      <a href="/pages/ipgwa.html">입과 템플릿 변환</a>
       <a href="/pages/lecture-info.html">강의 정보 정리</a>
       <a href="/pages/recommend.html">강의 추천</a>
       <a href="/pages/catalog.html">과정 리스트</a>
       <a href="/pages/categorize.html">카테고리 자동 분류</a>
-      <a href="/pages/report.html">콘텐츠 현황</a>
       <a href="/pages/result-report.html">결과 보고서</a>
+      <a href="/pages/enrollment-report.html">수강 리포트</a>
+      <a href="/pages/mail-guide.html">수강안내메일 에디터</a>
+      <a href="/pages/mail-encourage.html">독려메일 에디터</a>
+      <a href="/pages/package-guide.html">패키지강의 생성 가이드</a>
+      <a href="/pages/guide-public.html">가이드센터</a>
+      <a href="/pages/guide-admin.html">가이드센터 관리자</a>
+      <a href="/pages/settlement-dashboard.html">정산 대시보드</a>
+      <a href="/pages/settlement-providers.html">CP사 관리</a>
+      <a href="/pages/settlement-contracts.html">계약 관리</a>
+      <a href="/pages/settlement-products.html">상품 관리</a>
+      <a href="/pages/settlement-revenues.html">매출 관리</a>
+      <a href="/pages/settlement-import.html">CSV Import</a>
+      <a href="/pages/settlement-settlements.html">정산</a>
+      <a href="/pages/settlement-users.html">정산 시스템 사용자</a>
       <a href="/pages/members.html">구성원 다운로드</a>
       <a href="/pages/company-list.html">기업 리스트</a>
       <a href="/pages/company-dashboard.html">기업 현황 대시보드</a>
@@ -59,11 +71,6 @@
     <h2>Web Tools</h2>
     <p class="desc">Skillflo 업무를 도와주는 내부 도구 모음입니다.</p>
     <div class="dashboard-grid">
-      <a href="/pages/ipgwa.html" class="tool-card">
-        <div class="tool-card-icon">📋</div>
-        <div class="tool-card-title">입과 템플릿 변환</div>
-        <div class="tool-card-desc">엑셀을 업로드하면 이름·이메일·전화번호를 정리하고 형식 오류와 중복을 검출합니다.</div>
-      </a>
       <a href="/pages/lecture-info.html" class="tool-card">
         <div class="tool-card-icon">📚</div>
         <div class="tool-card-title">강의 정보 정리</div>
@@ -84,15 +91,45 @@
         <div class="tool-card-title">카테고리 자동 분류</div>
         <div class="tool-card-desc">강의명을 붙여넣으면 AI가 카테고리를 자동으로 분류합니다.</div>
       </a>
-      <a href="/pages/report.html" class="tool-card">
-        <div class="tool-card-icon">📊</div>
-        <div class="tool-card-title">콘텐츠 현황</div>
-        <div class="tool-card-desc">월별 콘텐츠 수, 카테고리별 순위, TOP 10 강의를 확인합니다.</div>
-      </a>
       <a href="/pages/result-report.html" class="tool-card">
         <div class="tool-card-icon">🧾</div>
         <div class="tool-card-title">결과 보고서</div>
         <div class="tool-card-desc">Skillflo raw data 3종을 업로드하면 수강 강의 현황부터 접속 유저수까지 자동으로 계산합니다.</div>
+      </a>
+      <a href="/pages/enrollment-report.html" class="tool-card">
+        <div class="tool-card-icon">📖</div>
+        <div class="tool-card-title">수강 리포트</div>
+        <div class="tool-card-desc">기업별 월간 수강 이력을 업로드하면 AI가 학습 현황을 분석해 서술형 코멘트가 담긴 리포트를 생성합니다.</div>
+      </a>
+      <a href="/pages/mail-guide.html" class="tool-card">
+        <div class="tool-card-icon">✉️</div>
+        <div class="tool-card-title">수강안내메일 에디터</div>
+        <div class="tool-card-desc">수강 시작 안내 메일 템플릿을 편집하고 HTML로 복사합니다.</div>
+      </a>
+      <a href="/pages/mail-encourage.html" class="tool-card">
+        <div class="tool-card-icon">📣</div>
+        <div class="tool-card-title">독려메일 에디터</div>
+        <div class="tool-card-desc">일반/수료기준/필수강의 독려 메일 템플릿을 편집하고 HTML로 복사합니다.</div>
+      </a>
+      <a href="/pages/package-guide.html" class="tool-card">
+        <div class="tool-card-icon">🧩</div>
+        <div class="tool-card-title">패키지강의 생성 가이드</div>
+        <div class="tool-card-desc">패키지 구독 강의 생성 과정을 스크린샷 핫스팟으로 따라 해보는 인터랙티브 가이드입니다.</div>
+      </a>
+      <a href="/pages/guide-public.html" class="tool-card">
+        <div class="tool-card-icon">📘</div>
+        <div class="tool-card-title">가이드센터</div>
+        <div class="tool-card-desc">Skillflo 사용자용 도움말 센터입니다. 카테고리·검색·HOT 아티클을 확인할 수 있습니다.</div>
+      </a>
+      <a href="/pages/guide-admin.html" class="tool-card">
+        <div class="tool-card-icon">🛠️</div>
+        <div class="tool-card-title">가이드센터 관리자</div>
+        <div class="tool-card-desc">가이드센터의 카테고리·아티클을 리치텍스트로 작성·편집하고 HOT 픽을 관리합니다.</div>
+      </a>
+      <a href="/pages/settlement-dashboard.html" class="tool-card">
+        <div class="tool-card-icon">💰</div>
+        <div class="tool-card-title">콘텐츠 정산 시스템</div>
+        <div class="tool-card-desc">CP사·계약·상품·매출을 관리하고 월별 콘텐츠 정산을 계산·확정합니다. (일부 정산 공식은 추정 구현 — 계약 관리 화면 참고)</div>
       </a>
       <a href="/pages/members.html" class="tool-card">
         <div class="tool-card-icon">👥</div>

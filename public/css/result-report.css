@@ -148,3 +148,281 @@
   font-size: 12.5px;
   color: var(--text-muted);
 }
+
+/* ===== Input cards (design matched to 온라인 교육 결과 보고서 생성기) ===== */
+.rr-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 24px 26px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow-sm);
+}
+
+.rr-card h3 {
+  font-size: 15px;
+  font-weight: 700;
+  margin: 0 0 18px;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.rr-card h3::before {
+  content: attr(data-num);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  background: var(--gradient-primary);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.rr-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.rr-grid .input-group input {
+  width: 100%;
+}
+
+.rr-checkbox-group {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.rr-checkbox-group label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-alt);
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text);
+  transition: all 0.15s ease;
+}
+
+.rr-checkbox-group label:hover {
+  border-color: var(--primary-light);
+  background: rgba(99, 102, 241, 0.06);
+}
+
+.rr-checkbox-group input[type="checkbox"] {
+  accent-color: var(--primary);
+  width: 15px;
+  height: 15px;
+}
+
+.rr-textarea {
+  width: 100%;
+  padding: 11px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--text);
+  background: var(--surface);
+  resize: vertical;
+  min-height: 70px;
+  margin-bottom: 20px;
+}
+
+.rr-textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.12);
+}
+
+.rr-img-dropzone {
+  padding: 20px;
+  margin-bottom: 0;
+}
+
+.rr-img-dropzone .icon {
+  font-size: 30px;
+}
+
+.rr-img-thumb-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.rr-img-thumb {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.rr-img-thumb img {
+  width: 120px;
+  height: 90px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface-alt);
+}
+
+.rr-img-thumb .rr-img-name {
+  font-size: 10px;
+  color: var(--text-muted);
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rr-img-thumb .rr-img-del {
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  font-size: 12px;
+  line-height: 20px;
+  text-align: center;
+  border-radius: 50%;
+  background: #ef4444;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+.rr-img-thumb .rr-img-del:hover {
+  background: #dc2626;
+}
+
+.btn-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.btn-secondary {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  box-shadow: none;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--surface-alt);
+  border-color: var(--primary-light);
+}
+
+.btn-secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-ghost {
+  background: transparent;
+  color: #dc2626;
+  border: 1px solid rgba(220, 38, 38, 0.3);
+  box-shadow: none;
+}
+
+.btn-ghost:hover {
+  background: rgba(220, 38, 38, 0.06);
+}
+
+/* ===== Printable report (A4-style, layout matched to 결과 보고서 생성기) ===== */
+.rr-report {
+  display: none;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 40px 46px;
+  box-shadow: var(--shadow-sm);
+}
+
+.rr-report.show {
+  display: block;
+  animation: fadeInUp 0.3s ease;
+}
+
+.rr-report-title {
+  font-size: 20px;
+  font-weight: 700;
+  border-bottom: 2px solid var(--text);
+  padding-bottom: 10px;
+  margin-bottom: 24px;
+  color: var(--text);
+}
+
+.rr-block {
+  margin-bottom: 28px;
+}
+
+.rr-block-section {
+  font-size: 15px;
+  font-weight: 700;
+  background: var(--surface-alt);
+  padding: 9px 14px;
+  margin: 0 0 14px;
+  border-left: 4px solid var(--primary);
+  color: var(--text);
+}
+
+.rr-block-subsection {
+  font-size: 13px;
+  font-weight: 700;
+  margin: 16px 0 8px;
+  color: var(--primary-dark);
+}
+
+.rr-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  align-items: start;
+}
+
+.rr-chart-wrap {
+  position: relative;
+  height: 220px;
+  margin-bottom: 10px;
+}
+
+.rr-report-note {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+@media print {
+  @page { size: A4; margin: 12mm; }
+  .sidebar, .topbar { display: none !important; }
+  .main { margin-left: 0; padding: 0; max-width: 100%; }
+  .main > h2, .main > .desc, .main > .rr-card, .main > .btn-row, .main > .status {
+    display: none !important;
+  }
+  .rr-report {
+    display: block !important;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+  }
+  canvas { max-width: 100% !important; height: auto !important; }
+}
