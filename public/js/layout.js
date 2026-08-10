@@ -8,20 +8,6 @@
     const themeBtn = document.getElementById('themeToggle');
     const sidebarBtn = document.getElementById('sidebarToggle');
     const sidebar = document.querySelector('.sidebar');
-    const topbar = document.querySelector('.topbar');
-
-    if (topbar && !document.getElementById('logoutBtn')) {
-      const logoutBtn = document.createElement('button');
-      logoutBtn.id = 'logoutBtn';
-      logoutBtn.title = '로그아웃';
-      logoutBtn.setAttribute('aria-label', '로그아웃');
-      logoutBtn.textContent = '⏻';
-      logoutBtn.addEventListener('click', async () => {
-        await fetch('/api/auth/logout', { method: 'POST' });
-        location.href = '/login.html';
-      });
-      topbar.appendChild(logoutBtn);
-    }
 
     function updateThemeIcon() {
       const t = document.documentElement.getAttribute('data-theme');

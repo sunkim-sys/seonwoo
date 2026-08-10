@@ -75,24 +75,4 @@ async function deactivateUser(id) {
   await db.query(`UPDATE settle_users SET status = 'inactive' WHERE id = $1`, [id]);
 }
 
-async function verifyLogin(loginId, password) {
-  await ensureTables();
-  const { rows } = await db.query(
-    `SELECT id, name, role, login_id, password_hash, status FROM settle_users WHERE login_id = $1`,
-    [String(loginId || '').trim()]
-  );
-  const user = rows[0];
-  if (!user || user.status !== 'active' || !user.password_hash) return null;
-
-  const [salt, storedHash] = user.password_hash.split(':');
-  if (!salt || !storedHash) return null;
-  const derived = crypto.scryptSync(String(password || ''), salt, 64).toString('hex');
-  const a = Buffer.from(derived, 'hex');
-  const b = Buffer.from(storedHash, 'hex');
-  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return null;
-
-  await db.query(`UPDATE settle_users SET last_login_at = now() WHERE id = $1`, [user.id]);
-  return { id: user.id, name: user.name, role: user.role, login_id: user.login_id };
-}
-
-module.exports = { listUsers, getUser, createUser, updateUser, deactivateUser, verifyLogin };
+module.exports = { listUsers, getUser, createUser, updateUser, deactivateUser };

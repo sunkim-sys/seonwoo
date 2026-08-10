@@ -10,19 +10,9 @@ const { handleResultReportRoutes } = require('./routes/resultReport');
 const { handleCompanyListRoutes } = require('./routes/companyList');
 const { handleSettlementRoutes } = require('./routes/settlement');
 const { handleEnrollmentReportRoutes } = require('./routes/enrollmentReport');
-const { handleAuthRoutes } = require('./routes/auth');
-const { getSession } = require('./services/auth');
 
 const PORT = process.env.PORT || 3000;
 const PUBLIC_ROOT = path.join(__dirname, 'public');
-
-// Paths reachable without a logged-in session: the login page itself, its API,
-// and shared static assets (no secrets live in css/js — data comes from gated APIs).
-function isPublicPath(pathname) {
-  return pathname === '/login.html'
-    || pathname.startsWith('/css/')
-    || pathname.startsWith('/js/');
-}
 
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -142,25 +132,6 @@ const server = http.createServer(async (req, res) => {
       res.writeHead(204);
       res.end();
       return;
-    }
-
-    // Auth: login/logout/me are handled before the gate below
-    if (req.url.startsWith('/api/auth')) {
-      return await handleAuthRoutes(req, res, { sendJson });
-    }
-
-    // Everything else requires a valid session, except login.html and shared static assets
-    const pathname = req.url.split('?')[0];
-    if (!isPublicPath(pathname)) {
-      const session = getSession(req);
-      if (!session) {
-        if (pathname.startsWith('/api/')) {
-          return sendJson(res, 401, { error: '로그인이 필요합니다.' });
-        }
-        res.writeHead(302, { Location: '/login.html?redirect=' + encodeURIComponent(pathname) });
-        return res.end();
-      }
-      req.session = session;
     }
 
     // API routes
