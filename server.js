@@ -10,8 +10,19 @@ const { handleResultReportRoutes } = require('./routes/resultReport');
 const { handleCompanyListRoutes } = require('./routes/companyList');
 const { handleSettlementRoutes } = require('./routes/settlement');
 const { handleEnrollmentReportRoutes } = require('./routes/enrollmentReport');
+const { handleAuthRoutes } = require('./routes/auth');
+const { getSession } = require('./services/auth');
 
 const PORT = process.env.PORT || 3000;
+const PUBLIC_ROOT = path.join(__dirname, 'public');
+
+// Paths reachable without a logged-in session: the login page itself, its API,
+// and shared static assets (no secrets live in css/js — data comes from gated APIs).
+function isPublicPath(pathname) {
+  return pathname === '/login.html'
+    || pathname.startsWith('/css/')
+    || pathname.startsWith('/js/');
+}
 
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -31,7 +42,17 @@ const MIME_TYPES = {
 
 function serveStatic(req, res) {
   const pathname = decodeURIComponent(req.url.split('?')[0]);
-  let filePath = path.join(__dirname, 'public', pathname === '/' ? 'index.html' : pathname);
+  const requested = pathname === '/' ? 'index.html' : pathname;
+  const filePath = path.normalize(path.join(PUBLIC_ROOT, requested));
+
+  // Containment check: normalize can still walk out of PUBLIC_ROOT via a
+  // crafted "../" path, so reject anything that resolves outside it.
+  if (filePath !== PUBLIC_ROOT && !filePath.startsWith(PUBLIC_ROOT + path.sep)) {
+    res.writeHead(403);
+    res.end('Forbidden');
+    return;
+  }
+
   const ext = path.extname(filePath);
   const contentType = MIME_TYPES[ext] || 'application/octet-stream';
 
@@ -39,7 +60,7 @@ function serveStatic(req, res) {
     if (err) {
       // SPA fallback: serve index.html for page routes
       if (err.code === 'ENOENT' && !ext) {
-        fs.readFile(path.join(__dirname, 'public', 'index.html'), (err2, html) => {
+        fs.readFile(path.join(PUBLIC_ROOT, 'index.html'), (err2, html) => {
           if (err2) { res.writeHead(404); res.end('Not Found'); return; }
           res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
           res.end(html);
@@ -121,6 +142,25 @@ const server = http.createServer(async (req, res) => {
       res.writeHead(204);
       res.end();
       return;
+    }
+
+    // Auth: login/logout/me are handled before the gate below
+    if (req.url.startsWith('/api/auth')) {
+      return await handleAuthRoutes(req, res, { sendJson });
+    }
+
+    // Everything else requires a valid session, except login.html and shared static assets
+    const pathname = req.url.split('?')[0];
+    if (!isPublicPath(pathname)) {
+      const session = getSession(req);
+      if (!session) {
+        if (pathname.startsWith('/api/')) {
+          return sendJson(res, 401, { error: '로그인이 필요합니다.' });
+        }
+        res.writeHead(302, { Location: '/login.html?redirect=' + encodeURIComponent(pathname) });
+        return res.end();
+      }
+      req.session = session;
     }
 
     // API routes

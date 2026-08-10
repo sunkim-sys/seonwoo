@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Web Tools - 로그인</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    body { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+    .login-card {
+      width: 100%;
+      max-width: 360px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 36px 32px;
+      box-shadow: var(--shadow-lg);
+    }
+    .login-card h1 {
+      font-size: 20px;
+      font-weight: 800;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+    .login-card form { display: flex; flex-direction: column; gap: 16px; }
+    .login-card .btn-primary { width: 100%; justify-content: center; margin-top: 4px; }
+    .login-card .status.error { margin: 0; }
+  </style>
+</head>
+<body>
+  <div class="login-card">
+    <h1>Web Tools</h1>
+    <form id="loginForm">
+      <div class="input-group">
+        <label>아이디</label>
+        <input type="text" id="loginId" autocomplete="username" required>
+      </div>
+      <div class="input-group">
+        <label>비밀번호</label>
+        <input type="password" id="password" autocomplete="current-password" required>
+      </div>
+      <div id="errorBox" class="status error" style="display:none;"></div>
+      <button type="submit" class="btn btn-primary" id="submitBtn">로그인</button>
+    </form>
+  </div>
+
+  <script>
+    const form = document.getElementById('loginForm');
+    const errorBox = document.getElementById('errorBox');
+    const submitBtn = document.getElementById('submitBtn');
+
+    const params = new URLSearchParams(location.search);
+    const redirectTo = params.get('redirect') && params.get('redirect').startsWith('/') ? params.get('redirect') : '/';
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      errorBox.style.display = 'none';
+      submitBtn.disabled = true;
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            login_id: document.getElementById('loginId').value.trim(),
+            password: document.getElementById('password').value,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || '로그인에 실패했습니다.');
+        location.href = redirectTo;
+      } catch (err) {
+        errorBox.textContent = err.message;
+        errorBox.style.display = 'block';
+      } finally {
+        submitBtn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
