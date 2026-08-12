@@ -43,12 +43,14 @@
         <input type="text" id="searchInput" placeholder="멤버그룹명 검색...">
       </div>
       <div class="filter-selects">
-        <select id="filterCsm">
-          <option value="">전체 CSM</option>
-        </select>
-        <select id="filterAe">
-          <option value="">전체 LD</option>
-        </select>
+        <div class="multiselect" id="msCsm">
+          <button type="button" class="multiselect-btn" id="msCsmBtn">전체 CSM</button>
+          <div class="multiselect-panel" id="msCsmPanel"></div>
+        </div>
+        <div class="multiselect" id="msAe">
+          <button type="button" class="multiselect-btn" id="msAeBtn">전체 LD</button>
+          <div class="multiselect-panel" id="msAePanel"></div>
+        </div>
         <select id="filterStatus">
           <option value="">전체 상태</option>
           <option value="ongoing">ongoing</option>
@@ -56,11 +58,13 @@
         </select>
         <button id="filterResetBtn" class="btn-filter-reset" style="display:none;">✕ 초기화</button>
       </div>
+      <button id="filterAttentionBtn" class="btn-filter-toggle">🔔 확인 필요만 보기 (신규/미배정)</button>
     </div>
 
     <div class="result-row">
       <div class="result-count" id="resultCount"></div>
       <div class="result-actions">
+        <button id="bulkDeleteBtn" class="btn-bulk-delete" disabled>선택 삭제 (0)</button>
         <button id="addBtn" class="btn-primary" style="padding:10px 18px;">+ 기업 추가</button>
       </div>
     </div>
@@ -72,6 +76,7 @@
       <table class="company-table">
         <thead>
           <tr>
+            <th><input type="checkbox" id="selectAllCheckbox"></th>
             <th>멤버그룹명</th>
             <th>멤버그룹 ID</th>
             <th>CSM</th>
