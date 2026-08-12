@@ -104,3 +104,37 @@
   .er-kpi-row { grid-template-columns: repeat(2, 1fr); }
   .er-bar-row { grid-template-columns: 100px 1fr 70px; }
 }
+
+.settle-main { max-width: 1180px; }
+
+.unverified-banner {
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  color: #78350f;
+  border-radius: 12px;
+  padding: 12px 18px;
+  font-size: 13px;
+  margin-bottom: 20px;
+  line-height: 1.6;
+}
+:root[data-theme="dark"] .unverified-banner {
+  background: rgba(234, 179, 8, 0.1);
+  border-color: rgba(234, 179, 8, 0.35);
+  color: #fde68a;
+}
+
+.data-table-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: auto;
+  box-shadow: var(--shadow-sm);
+}
+.data-table { width: 100%; border-collapse: collapse; font-size: 13px; white-space: nowrap; }
+.data-table th {
+  position: sticky; top: 0; background: var(--gradient-primary); color: #fff;
+  padding: 10px 14px; text-align: left; font-weight: 600; z-index: 1;
+}
+.data-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); color: var(--text); }
+.data-table tbody tr:hover td { background: #eef2ff; cursor: pointer; }
+:root[data-theme="dark"] .data-table tbody tr:hover td { background: rgba(99, 102, 241, 0.1); }

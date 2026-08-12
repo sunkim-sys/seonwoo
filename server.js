@@ -8,7 +8,6 @@ const { handleCategorizeRoutes } = require('./routes/categorize');
 const { handleMembersRoutes } = require('./routes/members');
 const { handleResultReportRoutes } = require('./routes/resultReport');
 const { handleCompanyListRoutes } = require('./routes/companyList');
-const { handleSettlementRoutes } = require('./routes/settlement');
 const { handleEnrollmentReportRoutes } = require('./routes/enrollmentReport');
 
 const PORT = process.env.PORT || 3000;
@@ -155,9 +154,6 @@ const server = http.createServer(async (req, res) => {
     }
     if (req.url.startsWith('/api/company-list')) {
       return await handleCompanyListRoutes(req, res, { sendJson });
-    }
-    if (req.url.startsWith('/api/settlement')) {
-      return await handleSettlementRoutes(req, res, { parseMultipart, sendJson });
     }
     if (req.url.startsWith('/api/enrollment-report')) {
       return await handleEnrollmentReportRoutes(req, res, { parseMultipart, sendJson });
