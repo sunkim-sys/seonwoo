@@ -9,6 +9,7 @@ const { handleMembersRoutes } = require('./routes/members');
 const { handleResultReportRoutes } = require('./routes/resultReport');
 const { handleCompanyListRoutes } = require('./routes/companyList');
 const { handleEnrollmentReportRoutes } = require('./routes/enrollmentReport');
+const { handleCsReportRoutes } = require('./routes/csReport');
 
 const PORT = process.env.PORT || 3000;
 const PUBLIC_ROOT = path.join(__dirname, 'public');
@@ -157,6 +158,9 @@ const server = http.createServer(async (req, res) => {
     }
     if (req.url.startsWith('/api/enrollment-report')) {
       return await handleEnrollmentReportRoutes(req, res, { parseMultipart, sendJson });
+    }
+    if (req.url.startsWith('/api/cs-report')) {
+      return await handleCsReportRoutes(req, res, { parseMultipart, sendJson });
     }
     // Static files
     serveStatic(req, res);
